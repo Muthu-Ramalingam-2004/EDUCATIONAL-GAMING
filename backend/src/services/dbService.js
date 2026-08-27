@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
 import { initialQuestionsData, initialBadgesData } from '../data/initialQuestions.js';
+import { pool } from './dbConnection.js';
 
 // === CRITICAL FIX: Use import.meta.url for a file-relative path ===
 // process.cwd() returns the directory node was LAUNCHED from, which changes
@@ -146,7 +147,7 @@ class PersistentDataStore {
   // Auth Operations
   async registerUser({ name, username, email, password, classStandard = 9, role = 'student' }) {
     const cleanEmail = email.trim().toLowerCase();
-    
+
     // Check if email already exists
     const existing = this.users.find(u => u.email.toLowerCase() === cleanEmail);
     if (existing) {
@@ -202,7 +203,7 @@ class PersistentDataStore {
   async loginUser({ email, password, expectedRole }) {
     const cleanEmail = email.trim().toLowerCase();
     const user = this.users.find(u => u.email.toLowerCase() === cleanEmail);
-    
+
     if (!user) {
       console.log(`[DB] Login attempt: user not found for email="${cleanEmail}"`);
       return null;
@@ -238,9 +239,9 @@ class PersistentDataStore {
 
     const student = this.students[user.id] || null;
     console.log(`✅ [DB] Login success: ${cleanEmail} [${user.role}]`);
-    return { 
-      user: { id: user.id, email: user.email, role: user.role }, 
-      student 
+    return {
+      user: { id: user.id, email: user.email, role: user.role },
+      student
     };
   }
 
