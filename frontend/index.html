@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MathQuest — Premium AAA Maths Gaming Platform</title>
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('mathquest_theme');
+          var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+          } else {
+            document.documentElement.classList.add('light');
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              navy: {
+                950: '#060913',
+                900: '#0B1021',
+                800: '#131B36',
+                700: '#1E294B',
+              },
+              cyan: {
+                400: '#22D3EE',
+                500: '#06B6D4',
+              },
+            },
+            fontFamily: {
+              heading: ['Outfit', 'sans-serif'],
+              body: ['Plus Jakarta Sans', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
+  </head>
+  <body class="bg-[#F0F4FF] dark:bg-[#060913] text-slate-900 dark:text-slate-100 min-h-screen selection:bg-cyan-500 selection:text-slate-950 transition-colors duration-300">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

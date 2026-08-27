@@ -1,0 +1,125 @@
+{
+  "users": [
+    {
+      "id": "usr_muthu_123",
+      "email": "muthu@mathquest.edu",
+      "password_hash": "$2a$10$cP2RFq7wrYOsQVeciDBXM.glJcUC5zGEmK555TduIwHmQd8LyCdy2",
+      "role": "student",
+      "createdAt": "2026-08-01T00:00:00.000Z"
+    },
+    {
+      "id": "usr_admin_999",
+      "email": "admin@mathquest.edu",
+      "password_hash": "$2a$10$cP2RFq7wrYOsQVeciDBXM.VgMxr6G3bmtc2um754sUwGnb3pDar26",
+      "role": "admin",
+      "createdAt": "2026-08-01T00:00:00.000Z"
+    },
+    {
+      "id": "usr_1787660874124_ocg0",
+      "email": "test@student.com",
+      "password_hash": "$2a$10$hB35NM2wF3JIhsRPtJFZ5uONWCaQGBBhx9N1VneZWPgrIEfhghPTe",
+      "role": "student",
+      "createdAt": "2026-08-25T12:27:54.124Z"
+    },
+    {
+      "id": "usr_1787662823863_ig2j",
+      "email": "arjun@student.com",
+      "password_hash": "$2a$10$LpxJhiy2qCGxdNz5Z795hOdzBbRbvSsuC8fjg7LD8JMABL/EU5XWy",
+      "role": "student",
+      "createdAt": "2026-08-25T13:00:23.863Z"
+    },
+    {
+      "id": "usr_1787663024417_4h5d",
+      "email": "muthuramalingam9344@gmail.com",
+      "password_hash": "$2a$10$HcfvlFa.X1pZKqNyKorvUu5ZaJ3YWUsvd8usIguUkWIJaDG2St7sG",
+      "role": "student",
+      "createdAt": "2026-08-25T13:03:44.417Z"
+    }
+  ],
+  "students": {
+    "usr_muthu_123": {
+      "id": "usr_muthu_123",
+      "name": "Muthu Ram (Demo)",
+      "username": "muthu_maths",
+      "email": "muthu@mathquest.edu",
+      "avatar": "⚡",
+      "classStandard": 9,
+      "level": 12,
+      "totalXp": 2450,
+      "nextLevelXp": 3000,
+      "coins": 850,
+      "streakDays": 5,
+      "gamesPlayed": 48,
+      "questionsSolved": 342,
+      "accuracyPct": 91,
+      "bestScore": 1250,
+      "currentWorldId": "class9_world2",
+      "currentWorldName": "Algebra Arena",
+      "recentBadge": "🔥 FAST SOLVER",
+      "createdAt": "2026-08-01T00:00:00.000Z"
+    },
+    "usr_1787660874124_ocg0": {
+      "id": "usr_1787660874124_ocg0",
+      "name": "Test Student",
+      "username": "test",
+      "email": "test@student.com",
+      "avatar": "⚡",
+      "classStandard": 9,
+      "level": 1,
+      "totalXp": 0,
+      "nextLevelXp": 500,
+      "coins": 0,
+      "streakDays": 1,
+      "gamesPlayed": 0,
+      "questionsSolved": 0,
+      "accuracyPct": 100,
+      "bestScore": 0,
+      "currentWorldId": "class9_world1",
+      "currentWorldName": "Number Quest",
+      "recentBadge": "🎯 Novice Adventurer",
+      "createdAt": "2026-08-25T12:27:54.126Z"
+    },
+    "usr_1787662823863_ig2j": {
+      "id": "usr_1787662823863_ig2j",
+      "name": "Arjun Sharma",
+      "username": "arjun",
+      "email": "arjun@student.com",
+      "avatar": "⚡",
+      "classStandard": 10,
+      "level": 1,
+      "totalXp": 0,
+      "nextLevelXp": 500,
+      "coins": 0,
+      "streakDays": 1,
+      "gamesPlayed": 0,
+      "questionsSolved": 0,
+      "accuracyPct": 100,
+      "bestScore": 0,
+      "currentWorldId": "class10_world1",
+      "currentWorldName": "Real Numbers",
+      "recentBadge": "🎯 Novice Adventurer",
+      "createdAt": "2026-08-25T13:00:23.864Z"
+    },
+    "usr_1787663024417_4h5d": {
+      "id": "usr_1787663024417_4h5d",
+      "name": "Muthu Ramalingam",
+      "username": "muthuramalingam9344",
+      "email": "muthuramalingam9344@gmail.com",
+      "avatar": "👑",
+      "classStandard": 9,
+      "level": 1,
+      "totalXp": 340,
+      "nextLevelXp": 500,
+      "coins": 180,
+      "streakDays": 1,
+      "gamesPlayed": 2,
+      "questionsSolved": 8,
+      "accuracyPct": 100,
+      "bestScore": 450,
+      "currentWorldId": "class9_world1",
+      "currentWorldName": "Number Quest",
+      "recentBadge": "🎯 Novice Adventurer",
+      "createdAt": "2026-08-25T13:03:44.417Z"
+    }
+  }
+}

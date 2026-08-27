@@ -1,0 +1,22 @@
+{
+  "name": "mathquest-backend",
+  "version": "1.0.0",
+  "description": "Express.js backend server with Supabase for MathQuest 9th & 10th Standard Mathematics Gaming Platform",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.8",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
