@@ -4,7 +4,7 @@
 
 -- 1. Users table (Authentication & Core Credentials)
 CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT gen_random_policy_uuid(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL DEFAULT 'student' CHECK (role IN ('student', 'admin')),
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS game_levels (
 
 -- 12. Student Game Attempts table
 CREATE TABLE IF NOT EXISTS student_game_attempts (
-    id UUID PRIMARY KEY DEFAULT gen_random_policy_uuid(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     student_id UUID REFERENCES students(id) ON DELETE CASCADE,
     game_id VARCHAR(100),
     chapter_id VARCHAR(100),
@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS student_badges (
 
 -- 17. Rewards table
 CREATE TABLE IF NOT EXISTS rewards (
-    id UUID PRIMARY KEY DEFAULT gen_random_policy_uuid(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     student_id UUID REFERENCES students(id) ON DELETE CASCADE,
     reward_type VARCHAR(50) NOT NULL CHECK (reward_type IN ('coins', 'xp', 'badge')),
     amount INT DEFAULT 0,
