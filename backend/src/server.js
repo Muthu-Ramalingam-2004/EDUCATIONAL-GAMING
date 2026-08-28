@@ -71,18 +71,24 @@ app.use(express.json());
 // ─── Health Check Endpoint ───────────────────────────────────────────────────
 app.get('/api/health', async (req, res) => {
   try {
-    const { pool } = await import('./services/dbConnection.js');
-    const userRes    = await pool.query('SELECT COUNT(*) FROM users');
-    const studentRes = await pool.query('SELECT COUNT(*) FROM students');
-    const userCount    = parseInt(userRes.rows[0].count, 10);
-    const studentCount = parseInt(studentRes.rows[0].count, 10);
+    const { supabase } = await import('./config/supabase.js');
+    let userCount = 0;
+    let studentCount = 0;
+
+    if (supabase) {
+      const { count: uCount } = await supabase.from('users').select('*', { count: 'exact', head: true });
+      const { count: sCount } = await supabase.from('students').select('*', { count: 'exact', head: true });
+      userCount = uCount || 0;
+      studentCount = sCount || 0;
+    }
+
     res.json({
       success: true,
       message: 'MathQuest backend is running',
       timestamp: new Date().toISOString(),
       database: {
-        status:   'connected (PostgreSQL/Supabase)',
-        users:    userCount,
+        status: supabase ? 'connected (Supabase REST API)' : 'offline',
+        users: userCount,
         students: studentCount
       }
     });
@@ -90,7 +96,7 @@ app.get('/api/health', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Health check failed — database may be unavailable.',
-      error:   err.message
+      error: err.message
     });
   }
 });
