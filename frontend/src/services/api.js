@@ -12,7 +12,8 @@ import axios from 'axios';
 //     .env.production sets VITE_API_URL=https://educational-maths-gaming.onrender.com/api
 //     Bundle hits Render directly. CORS headers on Render allow Vercel origin.
 //
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const RENDER_BACKEND_URL = 'https://educational-maths-gaming.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? RENDER_BACKEND_URL : '/api');
 
 // ─── Axios Instance ───────────────────────────────────────────────────────────
 const apiClient = axios.create({
