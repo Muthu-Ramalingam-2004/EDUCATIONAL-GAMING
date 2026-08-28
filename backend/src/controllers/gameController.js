@@ -1,13 +1,13 @@
 import { dbService } from '../services/dbService.js';
 
-export function getGames(req, res) {
+export function getGames(_req, res) {
   const games = [
-    { id: 'quiz', title: 'QUICK QUIZ', mode: 'quiz', difficulty: 'Medium', xpReward: 150, minLevel: 1 },
-    { id: 'puzzle', title: 'MATHS PUZZLE', mode: 'puzzle', difficulty: 'Hard', xpReward: 200, minLevel: 1 },
-    { id: 'dragdrop', title: 'DRAG & DROP REORDER', mode: 'dragdrop', difficulty: 'Challenge', xpReward: 220, minLevel: 2 },
-    { id: 'timeattack', title: 'TIME ATTACK', mode: 'quiz', difficulty: 'Extreme', xpReward: 250, minLevel: 3 },
-    { id: 'formula', title: 'FORMULA MATCH', mode: 'quiz', difficulty: 'Practice', xpReward: 180, minLevel: 4 },
-    { id: 'memory', title: 'MEMORY MATCH', mode: 'puzzle', difficulty: 'Medium', xpReward: 190, minLevel: 5 }
+    { id: 'quiz',       title: 'QUICK QUIZ',          mode: 'quiz',    difficulty: 'Medium',    xpReward: 150, minLevel: 1 },
+    { id: 'puzzle',     title: 'MATHS PUZZLE',         mode: 'puzzle',  difficulty: 'Hard',      xpReward: 200, minLevel: 1 },
+    { id: 'dragdrop',   title: 'DRAG & DROP REORDER',  mode: 'dragdrop',difficulty: 'Challenge', xpReward: 220, minLevel: 2 },
+    { id: 'timeattack', title: 'TIME ATTACK',           mode: 'quiz',    difficulty: 'Extreme',   xpReward: 250, minLevel: 3 },
+    { id: 'formula',    title: 'FORMULA MATCH',         mode: 'quiz',    difficulty: 'Practice',  xpReward: 180, minLevel: 4 },
+    { id: 'memory',     title: 'MEMORY MATCH',          mode: 'puzzle',  difficulty: 'Medium',    xpReward: 190, minLevel: 5 },
   ];
   res.json({ success: true, games });
 }
@@ -22,9 +22,10 @@ export function getGameById(req, res) {
 
 export function startGame(req, res) {
   const { gameId } = req.params;
-  const questions = dbService.questions.filter(q => q.questionType === (gameId === 'puzzle' ? 'puzzle' : gameId === 'dragdrop' ? 'dragdrop' : 'quiz'));
+  const questions = dbService.questions.filter(q =>
+    q.questionType === (gameId === 'puzzle' ? 'puzzle' : gameId === 'dragdrop' ? 'dragdrop' : 'quiz')
+  );
   const activeQuestions = questions.length > 0 ? questions : dbService.questions;
-
   res.json({
     success: true,
     sessionId: `sess_${Date.now()}`,
@@ -34,7 +35,8 @@ export function startGame(req, res) {
   });
 }
 
-export function submitGame(req, res) {
+// submitGame is now async because dbService.submitGameAttempt is async (PostgreSQL)
+export async function submitGame(req, res) {
   try {
     const { gameId } = req.params;
     const { answers = [], timeTakenSeconds = 120 } = req.body;
@@ -44,32 +46,19 @@ export function submitGame(req, res) {
       return res.status(401).json({ success: false, message: 'Authentication required.' });
     }
 
-    const result = dbService.submitGameAttempt({
-      studentId,
-      gameId,
-      answers,
-      timeTakenSeconds
-    });
+    const result = await dbService.submitGameAttempt({ studentId, gameId, answers, timeTakenSeconds });
 
     if (!result) {
       return res.status(404).json({ success: false, message: 'Student profile not found.' });
     }
 
-    res.json({
-      success: true,
-      message: 'Mission Complete!',
-      ...result
-    });
+    res.json({ success: true, message: 'Mission Complete!', ...result });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message || 'Failed to submit game.' });
   }
 }
 
-export function getGameHistory(req, res) {
-  const studentId = req.user?.id;
-  if (!studentId) {
-    return res.status(401).json({ success: false, message: 'Authentication required.' });
-  }
-  const history = dbService.gameAttempts.filter(att => att.studentId === studentId);
-  res.json({ success: true, history });
+export function getGameHistory(_req, res) {
+  // Game history is not persisted to DB yet — returns empty array
+  res.json({ success: true, history: [] });
 }

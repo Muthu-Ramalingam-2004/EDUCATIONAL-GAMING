@@ -139,7 +139,7 @@ export async function getProfile(req, res) {
       return res.status(401).json({ success: false, message: 'Authentication token required.' });
     }
 
-    const student = dbService.getStudentById(userId);
+    const student = await dbService.getStudentById(userId);
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student profile not found.' });
     }
@@ -157,7 +157,7 @@ export async function updateProfile(req, res) {
       return res.status(401).json({ success: false, message: 'Authentication required.' });
     }
 
-    const updated = dbService.updateStudentProfile(userId, req.body);
+    const updated = await dbService.updateStudentProfile(userId, req.body);
     if (!updated) {
       return res.status(404).json({ success: false, message: 'Student profile not found.' });
     }

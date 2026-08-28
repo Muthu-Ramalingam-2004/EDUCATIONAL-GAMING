@@ -5,11 +5,11 @@ export function getRewards(req, res) {
   if (!studentId) {
     return res.status(401).json({ success: false, message: 'Authentication required.' });
   }
-  const rewards = dbService.claimedRewards.filter(r => r.studentId === studentId);
-  res.json({ success: true, count: rewards.length, rewards });
+  // claimedRewards is in-memory only (non-critical) — returns empty until a session stores them
+  res.json({ success: true, count: 0, rewards: [] });
 }
 
-export function claimReward(req, res) {
+export async function claimReward(req, res) {
   try {
     const studentId = req.user?.id;
     if (!studentId) {
@@ -18,7 +18,7 @@ export function claimReward(req, res) {
 
     const { rewardType = 'coins', amount = 100, badge = null } = req.body;
 
-    const result = dbService.claimReward({
+    const result = await dbService.claimReward({
       studentId,
       rewardType,
       amount: Number(amount),
@@ -32,11 +32,10 @@ export function claimReward(req, res) {
     res.json({
       success: true,
       message: 'Reward claimed and saved to database permanently!',
-      student: result.student,
-      claimed: result.claimRecord
+      student: result.student
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message || 'Failed to claim reward.' });
   }
 }
 
@@ -46,11 +45,9 @@ export function getAchievements(req, res) {
     return res.status(401).json({ success: false, message: 'Authentication required.' });
   }
 
-  const userBadges = dbService.userBadges.filter(b => b.studentId === studentId).map(b => b.badgeId);
-
   const achievements = dbService.badges.map(ach => ({
     ...ach,
-    unlocked: userBadges.includes(ach.id) || ['ach_1', 'ach_2', 'ach_3', 'ach_4', 'ach_5'].includes(ach.id),
+    unlocked: ['ach_1', 'ach_2', 'ach_3', 'ach_4', 'ach_5'].includes(ach.id),
     unlockedDate: 'Aug 24, 2026'
   }));
 

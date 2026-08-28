@@ -1,8 +1,42 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Mail, Lock, User, ArrowRight, Sparkles, Trophy, Flame, AlertTriangle, GraduationCap } from 'lucide-react';
+import {
+  ShieldCheck, Mail, Lock, User, ArrowRight,
+  Sparkles, Trophy, Flame, AlertTriangle, GraduationCap
+} from 'lucide-react';
 import { authService } from '../services/authService';
 import { sound } from '../utils/sound';
+
+// ─── Final Safety Net ──────────────────────────────────────────────────────────
+// This function is the LAST line of defense before a value is rendered in JSX.
+// It guarantees that what we pass to setErrorMsg() is ALWAYS a non-empty string.
+// If anything upstream fails (axios, service, or interceptor), this catches it.
+function safeStr(value, fallback) {
+  // null / undefined
+  if (value === null || value === undefined) return fallback;
+  // already a safe string
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    // Reject [object Object] or empty string
+    if (trimmed && !trimmed.includes('[object')) return trimmed;
+    return fallback;
+  }
+  // Error instance
+  if (value instanceof Error) {
+    const msg = value.message;
+    if (typeof msg === 'string' && msg.trim() && !msg.includes('[object')) {
+      return msg.trim();
+    }
+    return fallback;
+  }
+  // Plain object — try JSON stringify for debugging, return fallback for user
+  if (typeof value === 'object') {
+    console.error('[AuthScreen] Received non-string error value:', value);
+    return fallback;
+  }
+  // Number, boolean, etc
+  return String(value) || fallback;
+}
 
 export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
   const [mode, setMode] = useState('login'); // 'login' | 'register' | 'admin'
@@ -10,20 +44,27 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [classStandard, setClassStandard] = useState(9);
-  
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Wrapper so setErrorMsg can never receive a non-string
+  const setError = (value, fallback = 'Authentication failed. Please try again.') => {
+    setErrorMsg(safeStr(value, fallback));
+  };
+
+  const clearError = () => setErrorMsg('');
 
   const handleModeChange = (newMode) => {
     sound.playClick();
     setMode(newMode);
-    setErrorMsg('');
+    clearError();
   };
 
+  // ─── Main Form Submit ────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     sound.playClick();
-    setErrorMsg('');
+    clearError();
     setLoading(true);
 
     try {
@@ -32,83 +73,96 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
           name: name.trim(),
           email: email.trim(),
           password,
-          classStandard: Number(classStandard)
+          classStandard: Number(classStandard),
         });
         if (res && res.success) {
           onLoginSuccess({ user: res.user, student: res.student, token: res.token });
+        } else {
+          // Backend returned success:false with no throw — shouldn't happen but guard it
+          const msg = (res && typeof res.message === 'string') ? res.message : '';
+          setError(msg || null, 'Registration failed. Please check your details and try again.');
         }
       } else if (mode === 'login') {
         const res = await authService.login({
           email: email.trim(),
-          password
+          password,
         });
         if (res && res.success) {
           onLoginSuccess({ user: res.user, student: res.student, token: res.token });
+        } else {
+          const msg = (res && typeof res.message === 'string') ? res.message : '';
+          setError(msg || null, 'Invalid email or password. Please try again.');
         }
       } else if (mode === 'admin') {
         const res = await authService.adminLogin({
           email: email.trim(),
-          password
+          password,
         });
         if (res && res.success) {
           onAdminLogin({ user: res.user, token: res.token });
+        } else {
+          const msg = (res && typeof res.message === 'string') ? res.message : '';
+          setError(msg || null, 'Access denied. Invalid admin credentials.');
         }
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Authentication failed. Please check your credentials.');
+      // err.message is always a plain string from authService/api.js interceptor
+      // safeStr provides the absolute final guard
+      const fallbacks = {
+        register: 'Registration failed. Please check your details and try again.',
+        login: 'Invalid email or password. Please try again.',
+        admin: 'Access denied. Invalid admin credentials.',
+      };
+      setError(err, fallbacks[mode] || 'Authentication failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  // ─── Demo / Quick Start Login ────────────────────────────────────────────────
+  // Uses REAL API only — no mock data injected
   const handleDemoLogin = async () => {
     sound.playClick();
-    setErrorMsg('');
+    clearError();
     setLoading(true);
     try {
       const res = await authService.login({
         email: 'muthu@mathquest.edu',
-        password: 'password123'
+        password: 'password123',
       });
       if (res && res.success) {
         onLoginSuccess({ user: res.user, student: res.student, token: res.token });
+      } else {
+        setError(
+          (res && res.message) || null,
+          'Demo login failed. The server may be starting up — please try again in 30 seconds.'
+        );
       }
     } catch (err) {
-      // Direct demo fallback
-      onLoginSuccess({
-        user: { id: 'usr_muthu_123', email: 'muthu@mathquest.edu', role: 'student' },
-        student: {
-          id: 'usr_muthu_123',
-          name: 'Muthu Ram (Demo)',
-          email: 'muthu@mathquest.edu',
-          avatar: '⚡',
-          classStandard: 9,
-          level: 12,
-          totalXp: 2450,
-          nextLevelXp: 3000,
-          coins: 850,
-          streakDays: 5
-        }
-      });
+      setError(
+        err,
+        'Demo login failed. The server may be temporarily unavailable. Please try again shortly.'
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // ─── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#F0F4FF] dark:bg-[#060913] flex items-center justify-center p-4 math-bg-grid relative overflow-hidden transition-colors duration-300">
-      
+
       {/* Background Ambient Glow */}
       <div className="orb-glow-cyan top-1/4 left-1/3 blur-[140px] opacity-35" />
       <div className="orb-glow-purple bottom-1/4 right-1/3 blur-[140px] opacity-35" />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
         className="glass-panel max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 rounded-3xl overflow-hidden border border-indigo-200 dark:border-white/15 shadow-2xl relative z-10"
       >
-        
+
         {/* Left Gaming Banner */}
         <div className="bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 p-8 text-white flex flex-col justify-between relative overflow-hidden border-b md:border-b-0 md:border-r border-indigo-200/30 dark:border-white/10">
           <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none" />
@@ -128,34 +182,34 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
               Unlock Your Maths Powers! 🚀
             </h3>
             <p className="text-sm text-cyan-200 leading-relaxed font-medium font-body">
-              Join thousands of CBSE Class 9th & 10th students conquering Algebra, Geometry, Trigonometry, and Statistics through high-stakes interactive gaming.
+              Join thousands of CBSE Class 9th &amp; 10th students conquering Algebra, Geometry, Trigonometry, and Statistics through high-stakes interactive gaming.
             </p>
           </div>
 
           <div className="my-6 space-y-3 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-xs relative z-10">
             <div className="flex items-center gap-2.5">
               <Trophy className="w-4 h-4 text-amber-400" />
-              <span className="text-amber-300 font-black font-heading">Level Progression & Gold Coins</span>
+              <span className="text-amber-300 font-black font-heading">Level Progression &amp; Gold Coins</span>
             </div>
             <div className="flex items-center gap-2.5">
               <Flame className="w-4 h-4 text-orange-400 fill-orange-400" />
-              <span className="text-orange-300 font-black font-heading">Daily Streaks & XP Multipliers</span>
+              <span className="text-orange-300 font-black font-heading">Daily Streaks &amp; XP Multipliers</span>
             </div>
             <div className="flex items-center gap-2.5">
               <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span className="text-cyan-300 font-black font-heading">National Leaderboard & Rank Badges</span>
+              <span className="text-cyan-300 font-black font-heading">National Leaderboard &amp; Rank Badges</span>
             </div>
           </div>
 
           <div className="text-[11px] text-slate-300 font-bold uppercase tracking-widest relative z-10 flex items-center gap-1.5 font-heading">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" /> CBSE Standard 9 & 10 Aligned
+            <ShieldCheck className="w-4 h-4 text-emerald-400" /> CBSE Standard 9 &amp; 10 Aligned
           </div>
         </div>
 
         {/* Right Form Container */}
         <div className="p-8 flex flex-col justify-center bg-white/90 dark:bg-slate-950/80 backdrop-blur-xl">
-          
-          {/* Mode Switcher Header */}
+
+          {/* Mode Switcher */}
           <div className="flex items-center justify-between mb-6 bg-slate-100 dark:bg-white/5 p-1.5 rounded-2xl border border-slate-200 dark:border-white/10">
             <button
               onClick={() => handleModeChange('login')}
@@ -189,27 +243,28 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
             {mode === 'admin' && 'Admin Portal Access 🔐'}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 font-semibold font-body">
-            {mode === 'admin' 
-              ? 'Manage math question banks, student progress & system analytics' 
+            {mode === 'admin'
+              ? 'Manage math question banks, student progress & system analytics'
               : mode === 'register'
               ? 'Register a new student account to track your level, XP, and badges'
               : 'Enter your student credentials to log into your account'}
           </p>
 
-          {/* Error Message Box */}
+          {/* Error Message Box — errorMsg is guaranteed to be a string by setError() */}
           {errorMsg && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-rose-50 dark:bg-rose-500/20 border border-rose-400 text-rose-700 dark:text-rose-200 p-3.5 rounded-xl text-xs font-heading font-black mb-4 flex items-center gap-2"
+              className="bg-rose-50 dark:bg-rose-500/20 border border-rose-400 text-rose-700 dark:text-rose-200 p-3.5 rounded-xl text-xs font-heading font-black mb-4 flex items-start gap-2"
             >
-              <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
-              <span>{errorMsg}</span>
+              <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+              {/* Explicit String() cast — the absolute last safety net */}
+              <span>{String(errorMsg)}</span>
             </motion.div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            
+
             {mode === 'register' && (
               <div>
                 <label className="block text-xs font-black font-heading text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Full Name</label>
@@ -242,7 +297,6 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
                   >
                     <GraduationCap className="w-4 h-4" /> Class 9th
                   </button>
-
                   <button
                     type="button"
                     onClick={() => setClassStandard(10)}
@@ -290,30 +344,37 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
               </div>
             </div>
 
-            <motion.button 
+            <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              type="submit" 
+              type="submit"
               disabled={loading}
               className={`w-full py-4 rounded-xl font-black font-heading text-sm flex items-center justify-center gap-2 shadow-xl transition-all cursor-pointer ${
-                mode === 'admin' 
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/40' 
+                mode === 'admin'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/40'
                   : 'btn-game-cyan'
-              }`}
+              } ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               <span>
-                {loading ? 'PROCESSING...' : mode === 'login' ? 'LOGIN & ENTER ARENA' : mode === 'register' ? 'CREATE ACCOUNT' : 'ENTER ADMIN PORTAL'}
+                {loading
+                  ? 'CONNECTING...'
+                  : mode === 'login'
+                  ? 'LOGIN & ENTER ARENA'
+                  : mode === 'register'
+                  ? 'CREATE ACCOUNT'
+                  : 'ENTER ADMIN PORTAL'}
               </span>
               <ArrowRight className="w-4 h-4" />
             </motion.button>
           </form>
 
-          {/* Quick Demo Button */}
+          {/* Quick Demo — uses real API, no mock data */}
           {mode !== 'admin' && (
             <div className="mt-5 pt-4 border-t border-slate-200 dark:border-white/10 text-center">
               <button
                 onClick={handleDemoLogin}
-                className="w-full py-2.5 bg-indigo-50/80 dark:bg-white/5 hover:bg-indigo-100 dark:hover:bg-white/10 text-indigo-800 dark:text-cyan-300 font-heading font-extrabold text-xs rounded-xl border border-indigo-200 dark:border-white/10 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                disabled={loading}
+                className="w-full py-2.5 bg-indigo-50/80 dark:bg-white/5 hover:bg-indigo-100 dark:hover:bg-white/10 text-indigo-800 dark:text-cyan-300 font-heading font-extrabold text-xs rounded-xl border border-indigo-200 dark:border-white/10 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
                 <span>⚡ Quick Start / Play as Demo Student</span>
               </button>
@@ -321,7 +382,6 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
           )}
 
         </div>
-
       </motion.div>
     </div>
   );

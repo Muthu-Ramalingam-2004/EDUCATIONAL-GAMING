@@ -36,29 +36,63 @@ process.on('unhandledRejection', (reason) => {
 });
 
 // ─── CORS Middleware ─────────────────────────────────────────────────────────
+// Strip trailing slashes from FRONTEND_URL (common misconfiguration)
+const cleanFrontendUrl = (FRONTEND_URL || '').replace(/\/+$/, '');
+
+// Origins allowed to call this backend
+const allowedOrigins = [
+  cleanFrontendUrl,
+  'https://educational-maths-gaming.vercel.app', // Production Vercel URL (hardcoded fallback)
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+].filter(Boolean);
+
 app.use(cors({
-  origin: [FRONTEND_URL, 'http://localhost:5173', 'http://127.0.0.1:5173'],
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow requests with no origin (server-to-server, Postman, curl, mobile)
+    if (!origin) return callback(null, true);
+    // Exact match against known origins
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow ALL Vercel preview/staging deployments (*.vercel.app)
+    if (origin.endsWith('.vercel.app')) return callback(null, true);
+    // Allow localhost on any port (development)
+    if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return callback(null, true);
+
+    console.warn(`[CORS] Blocked request from origin: ${origin}`);
+    // Return JSON-safe error — don't throw as Express may not serialize it properly
+    callback(null, false);
+  },
+  credentials: false, // false = no cookie passing — safer for cross-origin API
 }));
 
 app.use(express.json());
 
 // ─── Health Check Endpoint ───────────────────────────────────────────────────
-app.get('/api/health', (req, res) => {
-  const userCount = dbService.users ? dbService.users.length : 0;
-  const studentCount = dbService.students ? Object.keys(dbService.students).length : 0;
-
-  res.json({
-    success: true,
-    message: 'MathQuest backend is running',
-    timestamp: new Date().toISOString(),
-    database: {
-      status: 'connected',
-      storeFile: dbService.getStorePath(),
-      users: userCount,
-      students: studentCount
-    }
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    const { pool } = await import('./services/dbConnection.js');
+    const userRes    = await pool.query('SELECT COUNT(*) FROM users');
+    const studentRes = await pool.query('SELECT COUNT(*) FROM students');
+    const userCount    = parseInt(userRes.rows[0].count, 10);
+    const studentCount = parseInt(studentRes.rows[0].count, 10);
+    res.json({
+      success: true,
+      message: 'MathQuest backend is running',
+      timestamp: new Date().toISOString(),
+      database: {
+        status:   'connected (PostgreSQL/Supabase)',
+        users:    userCount,
+        students: studentCount
+      }
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Health check failed — database may be unavailable.',
+      error:   err.message
+    });
+  }
 });
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
