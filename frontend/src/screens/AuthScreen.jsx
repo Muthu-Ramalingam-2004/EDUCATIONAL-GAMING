@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   ShieldCheck, Mail, Lock, User, ArrowRight,
-  Sparkles, Trophy, Flame, AlertTriangle, GraduationCap
+  Sparkles, Trophy, Flame, AlertTriangle, GraduationCap,
+  Eye, EyeOff
 } from 'lucide-react';
 import { authService } from '../services/authService';
 import { sound } from '../utils/sound';
@@ -43,6 +44,7 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [classStandard, setClassStandard] = useState(9);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -57,6 +59,7 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
   const handleModeChange = (newMode) => {
     sound.playClick();
     setMode(newMode);
+    setShowPassword(false);
     clearError();
   };
 
@@ -332,15 +335,28 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
             <div>
               <label className="block text-xs font-black font-heading text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Password</label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-indigo-600 dark:text-cyan-400 absolute left-3.5 top-3.5" />
+                <Lock className="w-4 h-4 text-indigo-600 dark:text-cyan-400 absolute left-3.5 top-3.5 pointer-events-none" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:border-indigo-600 dark:focus:border-cyan-400 outline-none text-sm font-semibold transition-all"
+                  className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:border-indigo-600 dark:focus:border-cyan-400 outline-none text-sm font-semibold transition-all"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-3.5 text-slate-400 hover:text-indigo-600 dark:hover:text-cyan-400 transition-colors focus:outline-none cursor-pointer"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4 text-indigo-600 dark:text-cyan-400" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
               </div>
             </div>
 
