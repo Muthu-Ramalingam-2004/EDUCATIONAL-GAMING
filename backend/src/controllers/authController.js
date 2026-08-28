@@ -167,3 +167,57 @@ export async function updateProfile(req, res) {
     return res.status(500).json({ success: false, message: error.message });
   }
 }
+
+export async function verifyResetEmail(req, res) {
+  try {
+    const { email } = req.body;
+    if (!email || !email.trim()) {
+      return res.status(400).json({ success: false, message: 'Email address is required.' });
+    }
+
+    const result = await dbService.verifyResetEmail(email.trim());
+    return res.json({
+      success: true,
+      message: 'Account verified. Please enter your new password.',
+      user: result.user
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || 'Email verification failed.'
+    });
+  }
+}
+
+export async function resetPassword(req, res) {
+  try {
+    const { email, newPassword, confirmPassword } = req.body;
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({ success: false, message: 'Email address is required.' });
+    }
+
+    if (!newPassword || newPassword.length < 4) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 4 characters.' });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ success: false, message: 'New password and confirm password do not match.' });
+    }
+
+    const result = await dbService.resetPassword({
+      email: email.trim(),
+      newPassword
+    });
+
+    return res.json({
+      success: true,
+      message: result.message || 'Password changed successfully! You can now log in.'
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || 'Password reset failed.'
+    });
+  }
+}

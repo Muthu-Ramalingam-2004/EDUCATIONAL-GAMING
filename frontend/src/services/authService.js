@@ -77,6 +77,24 @@ export const authService = {
     }
   },
 
+  // ─── Verify Reset Email ───────────────────────────────────────────────────
+  async verifyResetEmail(email) {
+    try {
+      return await apiClient.post('/auth/verify-reset-email', { email });
+    } catch (err) {
+      throw new Error(normalizeAuthError(err, 'No account found with this email address.'));
+    }
+  },
+
+  // ─── Reset Password ───────────────────────────────────────────────────────
+  async resetPassword({ email, newPassword, confirmPassword }) {
+    try {
+      return await apiClient.post('/auth/reset-password', { email, newPassword, confirmPassword });
+    } catch (err) {
+      throw new Error(normalizeAuthError(err, 'Failed to reset password. Please try again.'));
+    }
+  },
+
   // ─── Get Profile ──────────────────────────────────────────────────────────
   async getProfile() {
     try {

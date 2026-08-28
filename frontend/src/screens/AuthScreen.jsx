@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   ShieldCheck, Mail, Lock, User, ArrowRight,
   Sparkles, Trophy, Flame, AlertTriangle, GraduationCap,
-  Eye, EyeOff
+  Eye, EyeOff, CheckCircle2, KeyRound
 } from 'lucide-react';
 import { authService } from '../services/authService';
 import { sound } from '../utils/sound';
@@ -40,7 +40,7 @@ function safeStr(value, fallback) {
 }
 
 export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
-  const [mode, setMode] = useState('login'); // 'login' | 'register' | 'admin'
+  const [mode, setMode] = useState('login'); // 'login' | 'register' | 'admin' | 'forgot'
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,6 +48,15 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
   const [classStandard, setClassStandard] = useState(9);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  // Password Reset States
+  const [resetStep, setResetStep] = useState(1); // 1: verify email, 2: set new password
+  const [resetEmail, setResetEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Wrapper so setErrorMsg can never receive a non-string
   const setError = (value, fallback = 'Authentication failed. Please try again.') => {
@@ -60,7 +69,16 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
     sound.playClick();
     setMode(newMode);
     setShowPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
     clearError();
+    setSuccessMsg('');
+    if (newMode === 'forgot') {
+      setResetStep(1);
+      setResetEmail(email);
+      setNewPassword('');
+      setConfirmPassword('');
+    }
   };
 
   // ─── Main Form Submit ────────────────────────────────────────────────────────
@@ -146,6 +164,79 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
         err,
         'Demo login failed. The server may be temporarily unavailable. Please try again shortly.'
       );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ─── Forgot Password Step 1: Verify Email ─────────────────────────────────────
+  const handleVerifyEmail = async (e) => {
+    e.preventDefault();
+    sound.playClick();
+    clearError();
+    setSuccessMsg('');
+    setLoading(true);
+
+    try {
+      if (!resetEmail || !resetEmail.trim()) {
+        setError('Please enter your registered student email address.');
+        setLoading(false);
+        return;
+      }
+
+      const res = await authService.verifyResetEmail(resetEmail.trim());
+      if (res && res.success) {
+        setResetStep(2);
+        setErrorMsg('');
+      } else {
+        setError((res && res.message) || null, 'No account found with this email address.');
+      }
+    } catch (err) {
+      setError(err, 'No account found with this email address.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ─── Forgot Password Step 2: Set New Password ─────────────────────────────────
+  const handleResetPasswordSubmit = async (e) => {
+    e.preventDefault();
+    sound.playClick();
+    clearError();
+    setSuccessMsg('');
+    setLoading(true);
+
+    try {
+      if (!newPassword || newPassword.length < 4) {
+        setError('New password must be at least 4 characters long.');
+        setLoading(false);
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        setError('New password and confirm password do not match.');
+        setLoading(false);
+        return;
+      }
+
+      const res = await authService.resetPassword({
+        email: resetEmail.trim(),
+        newPassword,
+        confirmPassword
+      });
+
+      if (res && res.success) {
+        setEmail(resetEmail.trim());
+        setPassword('');
+        setSuccessMsg(res.message || 'Password changed successfully! You can now log in.');
+        setMode('login');
+        setResetStep(1);
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        setError((res && res.message) || null, 'Failed to reset password. Please try again.');
+      }
+    } catch (err) {
+      setError(err, 'Failed to reset password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -244,14 +335,29 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
             {mode === 'login' && 'Welcome Back, Champion! 👋'}
             {mode === 'register' && 'Create Student Account 🎮'}
             {mode === 'admin' && 'Admin Portal Access 🔐'}
+            {mode === 'forgot' && (resetStep === 1 ? 'Reset Password 🔑' : 'Create New Password 🔐')}
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 font-semibold font-body">
             {mode === 'admin'
               ? 'Manage math question banks, student progress & system analytics'
               : mode === 'register'
               ? 'Register a new student account to track your level, XP, and badges'
+              : mode === 'forgot'
+              ? (resetStep === 1 ? 'Enter your registered student email address to verify your account' : `Account verified for ${resetEmail}. Set your new password below.`)
               : 'Enter your student credentials to log into your account'}
           </p>
+
+          {/* Success Message Box */}
+          {successMsg && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-emerald-50 dark:bg-emerald-500/20 border border-emerald-400 text-emerald-800 dark:text-emerald-200 p-3.5 rounded-xl text-xs font-heading font-black mb-4 flex items-center gap-2"
+            >
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+              <span>{String(successMsg)}</span>
+            </motion.div>
+          )}
 
           {/* Error Message Box — errorMsg is guaranteed to be a string by setError() */}
           {errorMsg && (
@@ -266,123 +372,267 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* FORGOT PASSWORD FORM */}
+          {mode === 'forgot' ? (
+            resetStep === 1 ? (
+              <form onSubmit={handleVerifyEmail} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-black font-heading text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                    Registered Student Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-indigo-600 dark:text-cyan-400 absolute left-3.5 top-3.5" />
+                    <input
+                      type="email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="student@mathquest.edu"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:border-indigo-600 dark:focus:border-cyan-400 outline-none text-sm font-semibold transition-all"
+                      required
+                    />
+                  </div>
+                </div>
 
-            {mode === 'register' && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-4 rounded-xl font-black font-heading text-sm flex items-center justify-center gap-2 shadow-xl btn-game-cyan transition-all cursor-pointer"
+                >
+                  <span>{loading ? 'VERIFYING...' : 'VERIFY EMAIL & CONTINUE'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </motion.button>
+
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange('login')}
+                    className="text-xs font-black font-heading text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-cyan-400 transition-all cursor-pointer"
+                  >
+                    ← Back to Student Login
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+                <div className="bg-indigo-50/80 dark:bg-cyan-950/40 border border-indigo-200 dark:border-cyan-800/50 p-3 rounded-xl text-xs text-indigo-900 dark:text-cyan-200 font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>Account Verified: <strong className="font-bold">{resetEmail}</strong></span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black font-heading text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-indigo-600 dark:text-cyan-400 absolute left-3.5 top-3.5 pointer-events-none" />
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="At least 4 characters"
+                      className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:border-indigo-600 dark:focus:border-cyan-400 outline-none text-sm font-semibold transition-all"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3.5 top-3.5 text-slate-400 hover:text-indigo-600 dark:hover:text-cyan-400 transition-colors focus:outline-none cursor-pointer"
+                      aria-label={showNewPassword ? "Hide password" : "Show password"}
+                      title={showNewPassword ? "Hide password" : "Show password"}
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="w-4 h-4 text-indigo-600 dark:text-cyan-400" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black font-heading text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                    Confirm New Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-indigo-600 dark:text-cyan-400 absolute left-3.5 top-3.5 pointer-events-none" />
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Repeat new password"
+                      className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:border-indigo-600 dark:focus:border-cyan-400 outline-none text-sm font-semibold transition-all"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3.5 top-3.5 text-slate-400 hover:text-indigo-600 dark:hover:text-cyan-400 transition-colors focus:outline-none cursor-pointer"
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                      title={showConfirmPassword ? "Hide password" : "Show password"}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-4 h-4 text-indigo-600 dark:text-cyan-400" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-4 rounded-xl font-black font-heading text-sm flex items-center justify-center gap-2 shadow-xl btn-game-cyan transition-all cursor-pointer"
+                >
+                  <span>{loading ? 'SAVING...' : 'UPDATE PASSWORD & LOGIN'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </motion.button>
+
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange('login')}
+                    className="text-xs font-black font-heading text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-cyan-400 transition-all cursor-pointer"
+                  >
+                    ← Back to Student Login
+                  </button>
+                </div>
+              </form>
+            )
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+
+              {mode === 'register' && (
+                <div>
+                  <label className="block text-xs font-black font-heading text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Full Name</label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-indigo-600 dark:text-cyan-400 absolute left-3.5 top-3.5" />
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Rahul Kumar"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:border-indigo-600 dark:focus:border-cyan-400 outline-none text-sm font-semibold transition-all"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
+              {mode === 'register' && (
+                <div>
+                  <label className="block text-xs font-black font-heading text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Class Standard</label>
+                  <div className="grid grid-cols-2 gap-3 font-heading">
+                    <button
+                      type="button"
+                      onClick={() => setClassStandard(9)}
+                      className={`py-2.5 rounded-xl text-xs font-black border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        classStandard === 9
+                          ? 'bg-gradient-to-r from-indigo-600 to-cyan-500 text-white border-cyan-400 shadow-md'
+                          : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-white/10'
+                      }`}
+                    >
+                      <GraduationCap className="w-4 h-4" /> Class 9th
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setClassStandard(10)}
+                      className={`py-2.5 rounded-xl text-xs font-black border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        classStandard === 10
+                          ? 'bg-gradient-to-r from-indigo-600 to-cyan-500 text-white border-cyan-400 shadow-md'
+                          : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-white/10'
+                      }`}
+                    >
+                      <GraduationCap className="w-4 h-4" /> Class 10th
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label className="block text-xs font-black font-heading text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Full Name</label>
+                <label className="block text-xs font-black font-heading text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
+                  {mode === 'admin' ? 'Teacher / Admin Email' : 'Student Email'}
+                </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-indigo-600 dark:text-cyan-400 absolute left-3.5 top-3.5" />
+                  <Mail className="w-4 h-4 text-indigo-600 dark:text-cyan-400 absolute left-3.5 top-3.5" />
                   <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Rahul Kumar"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={mode === 'admin' ? 'admin@mathquest.edu' : 'student@mathquest.edu'}
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:border-indigo-600 dark:focus:border-cyan-400 outline-none text-sm font-semibold transition-all"
                     required
                   />
                 </div>
               </div>
-            )}
 
-            {mode === 'register' && (
               <div>
-                <label className="block text-xs font-black font-heading text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Class Standard</label>
-                <div className="grid grid-cols-2 gap-3 font-heading">
+                <label className="block text-xs font-black font-heading text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Password</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-indigo-600 dark:text-cyan-400 absolute left-3.5 top-3.5 pointer-events-none" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:border-indigo-600 dark:focus:border-cyan-400 outline-none text-sm font-semibold transition-all"
+                    required
+                  />
                   <button
                     type="button"
-                    onClick={() => setClassStandard(9)}
-                    className={`py-2.5 rounded-xl text-xs font-black border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                      classStandard === 9
-                        ? 'bg-gradient-to-r from-indigo-600 to-cyan-500 text-white border-cyan-400 shadow-md'
-                        : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-white/10'
-                    }`}
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-3.5 text-slate-400 hover:text-indigo-600 dark:hover:text-cyan-400 transition-colors focus:outline-none cursor-pointer"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    title={showPassword ? "Hide password" : "Show password"}
                   >
-                    <GraduationCap className="w-4 h-4" /> Class 9th
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setClassStandard(10)}
-                    className={`py-2.5 rounded-xl text-xs font-black border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                      classStandard === 10
-                        ? 'bg-gradient-to-r from-indigo-600 to-cyan-500 text-white border-cyan-400 shadow-md'
-                        : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-white/10'
-                    }`}
-                  >
-                    <GraduationCap className="w-4 h-4" /> Class 10th
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4 text-indigo-600 dark:text-cyan-400" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
+                {mode === 'login' && (
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleModeChange('forgot')}
+                      className="text-xs font-bold font-heading text-indigo-600 dark:text-cyan-400 hover:text-indigo-800 dark:hover:text-cyan-300 hover:underline transition-all cursor-pointer"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
 
-            <div>
-              <label className="block text-xs font-black font-heading text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
-                {mode === 'admin' ? 'Teacher / Admin Email' : 'Student Email'}
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-indigo-600 dark:text-cyan-400 absolute left-3.5 top-3.5" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={mode === 'admin' ? 'admin@mathquest.edu' : 'student@mathquest.edu'}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:border-indigo-600 dark:focus:border-cyan-400 outline-none text-sm font-semibold transition-all"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-black font-heading text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">Password</label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-indigo-600 dark:text-cyan-400 absolute left-3.5 top-3.5 pointer-events-none" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:border-indigo-600 dark:focus:border-cyan-400 outline-none text-sm font-semibold transition-all"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-3.5 text-slate-400 hover:text-indigo-600 dark:hover:text-cyan-400 transition-colors focus:outline-none cursor-pointer"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  title={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4 text-indigo-600 dark:text-cyan-400" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={loading}
-              className={`w-full py-4 rounded-xl font-black font-heading text-sm flex items-center justify-center gap-2 shadow-xl transition-all cursor-pointer ${
-                mode === 'admin'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/40'
-                  : 'btn-game-cyan'
-              } ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
-            >
-              <span>
-                {loading
-                  ? 'CONNECTING...'
-                  : mode === 'login'
-                  ? 'LOGIN & ENTER ARENA'
-                  : mode === 'register'
-                  ? 'CREATE ACCOUNT'
-                  : 'ENTER ADMIN PORTAL'}
-              </span>
-              <ArrowRight className="w-4 h-4" />
-            </motion.button>
-          </form>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={loading}
+                className={`w-full py-4 rounded-xl font-black font-heading text-sm flex items-center justify-center gap-2 shadow-xl transition-all cursor-pointer ${
+                  mode === 'admin'
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/40'
+                    : 'btn-game-cyan'
+                } ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+              >
+                <span>
+                  {loading
+                    ? 'CONNECTING...'
+                    : mode === 'login'
+                    ? 'LOGIN & ENTER ARENA'
+                    : mode === 'register'
+                    ? 'CREATE ACCOUNT'
+                    : 'ENTER ADMIN PORTAL'}
+                </span>
+                <ArrowRight className="w-4 h-4" />
+              </motion.button>
+            </form>
+          )}
 
           {/* Quick Demo — uses real API, no mock data */}
           {mode !== 'admin' && (

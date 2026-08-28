@@ -210,6 +210,71 @@ class PersistentDataStore {
     };
   }
 
+  // ─── VERIFY RESET EMAIL ───────────────────────────────────────────────────
+  async verifyResetEmail(email) {
+    if (!supabase) {
+      throw new Error('Database service is not available.');
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('id, email, role')
+      .eq('email', cleanEmail);
+
+    if (error) {
+      console.error('[DB] verifyResetEmail query error:', error.message);
+      throw new Error('Database connection error during email verification.');
+    }
+
+    if (!users || users.length === 0) {
+      throw new Error('No account found with this email address.');
+    }
+
+    const user = users[0];
+    return {
+      exists: true,
+      user: { id: user.id, email: user.email, role: user.role }
+    };
+  }
+
+  // ─── RESET PASSWORD ───────────────────────────────────────────────────────
+  async resetPassword({ email, newPassword }) {
+    if (!supabase) {
+      throw new Error('Database service is not available.');
+    }
+    const cleanEmail = email.trim().toLowerCase();
+
+    const { data: users, error: findErr } = await supabase
+      .from('users')
+      .select('id, email')
+      .eq('email', cleanEmail);
+
+    if (findErr) {
+      console.error('[DB] resetPassword find user error:', findErr.message);
+      throw new Error('Database error while finding user account.');
+    }
+
+    if (!users || users.length === 0) {
+      throw new Error('No account found with this email address.');
+    }
+
+    const user = users[0];
+    const passwordHash = bcrypt.hashSync(newPassword, 10);
+
+    const { error: updateErr } = await supabase
+      .from('users')
+      .update({ password_hash: passwordHash })
+      .eq('id', user.id);
+
+    if (updateErr) {
+      console.error('[DB] resetPassword update error:', updateErr.message);
+      throw new Error('Failed to update password in database.');
+    }
+
+    console.log(`✅ [DB] Password reset successfully for email="${cleanEmail}"`);
+    return { success: true, message: 'Password changed successfully! You can now log in.' };
+  }
+
   // ─── GET STUDENT BY ID ────────────────────────────────────────────────────
   async getStudentById(studentId) {
     if (!supabase || !studentId) return null;

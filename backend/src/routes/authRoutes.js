@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, adminLogin, getProfile, updateProfile } from '../controllers/authController.js';
+import { register, login, adminLogin, getProfile, updateProfile, verifyResetEmail, resetPassword } from '../controllers/authController.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -7,6 +7,8 @@ const router = express.Router();
 router.post('/register', register);
 router.post('/login', login);
 router.post('/admin-login', adminLogin);
+router.post('/verify-reset-email', verifyResetEmail);
+router.post('/reset-password', resetPassword);
 router.get('/profile', authenticateToken, getProfile);
 router.put('/profile', authenticateToken, updateProfile);
 
