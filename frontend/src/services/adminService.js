@@ -9,22 +9,6 @@ export const adminService = {
     }
   },
 
-  async getClasses() {
-    try {
-      return await apiClient.get('/admin/classes');
-    } catch (err) {
-      return { success: false };
-    }
-  },
-
-  async getChapters() {
-    try {
-      return await apiClient.get('/admin/chapters');
-    } catch (err) {
-      return { success: false };
-    }
-  },
-
   async getQuestions() {
     try {
       return await apiClient.get('/admin/questions');
@@ -37,7 +21,15 @@ export const adminService = {
     try {
       return await apiClient.post('/admin/questions', questionData);
     } catch (err) {
-      return { success: true, message: 'Question saved locally' };
+      return { success: false };
+    }
+  },
+
+  async updateQuestion(id, questionData) {
+    try {
+      return await apiClient.put(`/admin/questions/${id}`, questionData);
+    } catch (err) {
+      return { success: false };
     }
   },
 
@@ -45,7 +37,47 @@ export const adminService = {
     try {
       return await apiClient.delete(`/admin/questions/${id}`);
     } catch (err) {
-      return { success: true };
+      return { success: false };
+    }
+  },
+
+  async getStudents() {
+    try {
+      return await apiClient.get('/admin/students');
+    } catch (err) {
+      return { success: false };
+    }
+  },
+
+  async updateStudent(id, studentData) {
+    try {
+      return await apiClient.put(`/admin/students/${id}`, studentData);
+    } catch (err) {
+      return { success: false };
+    }
+  },
+
+  async deleteStudent(id) {
+    try {
+      return await apiClient.delete(`/admin/students/${id}`);
+    } catch (err) {
+      return { success: false };
+    }
+  },
+
+  async getLeaderboard() {
+    try {
+      return await apiClient.get('/admin/leaderboard');
+    } catch (err) {
+      return { success: false };
+    }
+  },
+
+  async getBadges() {
+    try {
+      return await apiClient.get('/admin/badges');
+    } catch (err) {
+      return { success: false };
     }
   }
 };

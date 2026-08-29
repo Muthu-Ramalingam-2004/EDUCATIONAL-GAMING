@@ -1,8 +1,12 @@
 import { dbService } from '../services/dbService.js';
 
-export function getDashboardStats(req, res) {
-  const stats = dbService.getAdminStats();
-  res.json({ success: true, stats });
+export async function getDashboardStats(req, res) {
+  try {
+    const stats = await dbService.getRealAdminStats();
+    res.json({ success: true, stats });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 }
 
 // Classes CRUD
@@ -62,7 +66,7 @@ export function getAdminQuestions(req, res) {
 }
 
 export function createQuestion(req, res) {
-  const { questionText, options = [], classStandard = 9, questionType = 'quiz', explanation = '' } = req.body;
+  const { questionText, options = [], classStandard = 9, questionType = 'quiz', explanation = '', difficulty = 'Medium', xpReward = 50, coinsReward = 20 } = req.body;
   
   const newQ = {
     id: `q_${Date.now()}`,
@@ -71,9 +75,9 @@ export function createQuestion(req, res) {
     questionText,
     options,
     explanation,
-    difficulty: 'Medium',
-    xpReward: 50,
-    coinsReward: 20
+    difficulty,
+    xpReward: Number(xpReward),
+    coinsReward: Number(coinsReward)
   };
 
   dbService.questions.push(newQ);
@@ -95,4 +99,55 @@ export function deleteQuestion(req, res) {
   const { id } = req.params;
   dbService.questions = dbService.questions.filter(q => q.id !== id);
   res.json({ success: true, message: 'Question deleted successfully' });
+}
+
+// Students CRUD
+export async function getStudents(req, res) {
+  try {
+    const students = await dbService.getAllStudents();
+    res.json({ success: true, students });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
+
+export async function updateStudent(req, res) {
+  try {
+    const { id } = req.params;
+    const updated = await dbService.updateStudentProfile(id, req.body);
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Student profile not found' });
+    }
+    res.json({ success: true, message: 'Student stats updated successfully', student: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
+
+export async function deleteStudent(req, res) {
+  try {
+    const { id } = req.params;
+    const success = await dbService.deleteStudent(id);
+    if (!success) {
+      return res.status(500).json({ success: false, message: 'Failed to delete student' });
+    }
+    res.json({ success: true, message: 'Student deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
+
+// Leaderboard
+export async function getLeaderboard(req, res) {
+  try {
+    const leaderboard = await dbService.getRealLeaderboard();
+    res.json({ success: true, leaderboard });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
+
+// Badges
+export function getBadges(req, res) {
+  res.json({ success: true, badges: dbService.badges });
 }

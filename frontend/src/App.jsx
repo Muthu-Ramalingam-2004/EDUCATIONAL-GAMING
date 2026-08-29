@@ -382,7 +382,7 @@ export default function App() {
           {/* 17. ADMIN DASHBOARD SCREEN */}
           {currentScreen === 'admin' && (
             isAdmin ? (
-              <AdminDashboardScreen />
+              <AdminDashboardScreen onLogout={handleLogout} />
             ) : (
               <div className="glass-panel p-8 text-center rounded-3xl space-y-4">
                 <h2 className="text-2xl font-black text-rose-600 font-heading">Access Denied</h2>

@@ -96,13 +96,13 @@ export async function login(req, res) {
 
 export async function adminLogin(req, res) {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Admin email and password are required.' });
+    const { adminId, password } = req.body;
+    if (!adminId || !password) {
+      return res.status(400).json({ success: false, message: 'Admin ID and password are required.' });
     }
 
     const result = await dbService.loginUser({ 
-      email: email.trim(), 
+      adminId: adminId.trim(), 
       password,
       expectedRole: 'admin'
     });
@@ -110,7 +110,7 @@ export async function adminLogin(req, res) {
     if (!result || result.roleMismatch) {
       return res.status(403).json({ 
         success: false, 
-        message: 'Access denied. Invalid admin credentials or student account attempt.' 
+        message: 'Access denied. Invalid Admin ID or password.' 
       });
     }
 

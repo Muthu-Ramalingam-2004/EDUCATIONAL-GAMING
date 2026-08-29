@@ -4,7 +4,9 @@ import {
   getClasses, createClass,
   getChapters, createChapter,
   getTopics, createTopic,
-  getAdminQuestions, createQuestion, updateQuestion, deleteQuestion
+  getAdminQuestions, createQuestion, updateQuestion, deleteQuestion,
+  getStudents, updateStudent, deleteStudent,
+  getLeaderboard, getBadges
 } from '../controllers/adminController.js';
 import { authenticateToken, requireAdmin } from '../middleware/authMiddleware.js';
 
@@ -29,5 +31,14 @@ router.get('/questions', getAdminQuestions);
 router.post('/questions', createQuestion);
 router.put('/questions/:id', updateQuestion);
 router.delete('/questions/:id', deleteQuestion);
+
+// Student Management
+router.get('/students', getStudents);
+router.put('/students/:id', updateStudent);
+router.delete('/students/:id', deleteStudent);
+
+// Extra stats / data
+router.get('/leaderboard', getLeaderboard);
+router.get('/badges', getBadges);
 
 export default router;

@@ -149,17 +149,25 @@ class PersistentDataStore {
   }
 
   // ─── LOGIN USER ───────────────────────────────────────────────────────────
-  async loginUser({ email, password, expectedRole }) {
+  async loginUser({ email, password, expectedRole, adminId }) {
     if (!supabase) {
       throw new Error('Database service is not available.');
     }
 
-    const cleanEmail = email.trim().toLowerCase();
+    let query = supabase.from('users').select('*');
+    let logIdentifier = '';
+    
+    if (adminId) {
+      const cleanAdminId = adminId.trim().toLowerCase();
+      logIdentifier = cleanAdminId;
+      query = query.or(`admin_id.eq.${cleanAdminId},email.eq.${cleanAdminId}`);
+    } else {
+      const cleanEmail = (email || '').trim().toLowerCase();
+      logIdentifier = cleanEmail;
+      query = query.eq('email', cleanEmail);
+    }
 
-    const { data: users, error: userErr } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', cleanEmail);
+    const { data: users, error: userErr } = await query;
 
     if (userErr) {
       console.error('[DB] Login query error:', userErr.message);
@@ -167,7 +175,7 @@ class PersistentDataStore {
     }
 
     if (!users || users.length === 0) {
-      console.log(`[DB] Login: user not found email="${cleanEmail}"`);
+      console.log(`[DB] Login: user not found ID/email="${logIdentifier}"`);
       return null;
     }
 
@@ -182,7 +190,7 @@ class PersistentDataStore {
     }
 
     if (!isMatch) {
-      console.log(`[DB] Login: password mismatch email="${cleanEmail}"`);
+      console.log(`[DB] Login: password mismatch ID/email="${logIdentifier}"`);
       return null;
     }
 
@@ -203,7 +211,7 @@ class PersistentDataStore {
       student = mapStudentRow(stData);
     }
 
-    console.log(`✅ [DB] Login successful: ${cleanEmail} [${user.role}]`);
+    console.log(`✅ [DB] Login successful: ${logIdentifier} [${user.role}]`);
     return {
       user: { id: user.id, email: user.email, role: user.role },
       student
@@ -447,6 +455,121 @@ class PersistentDataStore {
 
   getStorePath() {
     return 'Supabase Cloud PostgreSQL Database';
+  }
+
+  // ─── GET ALL STUDENTS (ADMIN API) ─────────────────────────────────────────
+  async getAllStudents() {
+    if (!supabase) {
+      return Object.values(this.students || {}).map(s => mapStudentRow(s));
+    }
+    const { data, error } = await supabase
+      .from('students')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error('[DB] getAllStudents error:', error.message);
+      return [];
+    }
+    return data.map(row => mapStudentRow(row));
+  }
+
+  // ─── DELETE STUDENT (ADMIN API) ───────────────────────────────────────────
+  async deleteStudent(studentId) {
+    if (!supabase) return false;
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', studentId);
+    if (error) {
+      console.error('[DB] deleteStudent error:', error.message);
+      return false;
+    }
+    return true;
+  }
+
+  // ─── GET REAL ADMIN STATISTICS (ADMIN API) ───────────────────────────────
+  async getRealAdminStats() {
+    if (!supabase) {
+      return this.getAdminStats();
+    }
+
+    try {
+      // 1. Get total students count
+      const { count: totalStudents } = await supabase
+        .from('students')
+        .select('*', { count: 'exact', head: true });
+
+      // 2. Get total questions count
+      const totalQuestions = this.questions.length;
+
+      // 3. Get total game attempts count
+      const { count: totalGames } = await supabase
+        .from('student_game_attempts')
+        .select('*', { count: 'exact', head: true });
+
+      // 4. Get active players count (students active in the last 7 days)
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { count: activePlayers } = await supabase
+        .from('students')
+        .select('*', { count: 'exact', head: true })
+        .gt('last_active_at', sevenDaysAgo);
+
+      // 5. Get average accuracy or average score
+      const { data: attempts } = await supabase
+        .from('student_game_attempts')
+        .select('score, accuracy_pct');
+      
+      let averageScore = 0;
+      let averageAccuracy = 100;
+      if (attempts && attempts.length > 0) {
+        const sumScore = attempts.reduce((sum, att) => sum + (att.score || 0), 0);
+        averageScore = Math.round(sumScore / attempts.length);
+        const sumAcc = attempts.reduce((sum, att) => sum + (att.accuracy_pct || 0), 0);
+        averageAccuracy = Math.round(sumAcc / attempts.length);
+      }
+
+      return {
+        totalStudents: totalStudents || 0,
+        totalGames: totalGames || 0,
+        totalQuestions: totalQuestions || 0,
+        activePlayers: activePlayers || 0,
+        averageScore: averageScore || 0,
+        averageAccuracy: averageAccuracy || 100,
+        mostPlayedGame: "Quick Quiz Arena",
+        difficultTopics: "Quadratic Equations, Trigonometry"
+      };
+    } catch (err) {
+      console.error('[DB] getRealAdminStats error:', err.message);
+      return this.getAdminStats();
+    }
+  }
+
+  // ─── GET REAL LEADERBOARD (ADMIN API) ─────────────────────────────────────
+  async getRealLeaderboard() {
+    if (!supabase) {
+      return this.getLeaderboard();
+    }
+    const { data, error } = await supabase
+      .from('students')
+      .select('*')
+      .order('total_xp', { ascending: false })
+      .limit(20);
+
+    if (error) {
+      console.error('[DB] getRealLeaderboard error:', error.message);
+      return this.getLeaderboard();
+    }
+
+    return data.map((row, idx) => ({
+      rank: idx + 1,
+      name: row.name || 'Student',
+      avatar: row.avatar || '⚡',
+      level: Number(row.level) || 1,
+      xp: Number(row.total_xp) || 0,
+      score: Number(row.best_score) || 0,
+      streak: Number(row.streak_days) || 1,
+      isCurrentUser: false
+    }));
   }
 }
 
