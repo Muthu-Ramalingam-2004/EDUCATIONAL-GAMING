@@ -506,8 +506,8 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
               <div className="space-y-4">
                 
                 {/* Search / Filters Bar */}
-                <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-950/40 p-4 rounded-2xl border border-white/10">
-                  <div className="relative flex-1 min-w-[200px]">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-slate-950/40 p-4 rounded-2xl border border-white/10">
+                  <div className="relative flex-1 min-w-0">
                     <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                     <input
                       type="text"
@@ -518,7 +518,7 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
                     />
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
                     <span className="text-xs text-slate-400 font-bold uppercase">Filter:</span>
                     <button
                       onClick={() => { sound.playClick(); setClassFilter('all'); }}

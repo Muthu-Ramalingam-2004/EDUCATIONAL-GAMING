@@ -4,7 +4,7 @@ import { Flame, Coins, ShieldCheck, Sparkles, Sun, Moon, Zap } from 'lucide-reac
 import { sound } from '../../utils/sound';
 import { useTheme } from '../../context/ThemeContext';
 
-export default function TopHeader({ user, onNavigate, onOpenProfile, isAdmin, onLogout }) {
+export default function TopHeader({ user, onNavigate, onOpenProfile, isAdmin, onLogout, onExitAdmin }) {
   const { isDark, toggleTheme } = useTheme();
   const xpPercent = Math.min(100, Math.round((user.xp / (user.nextLevelXp || 1000)) * 100));
 
