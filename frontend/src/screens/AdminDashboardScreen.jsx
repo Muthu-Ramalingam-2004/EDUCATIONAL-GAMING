@@ -455,9 +455,9 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
                 </div>
 
                 {/* Extended Diagnostic Overview */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full min-w-0">
                   {/* Performance Indicators */}
-                  <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-4 col-span-2">
+                  <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-4 col-span-1 lg:col-span-2 w-full min-w-0 box-border">
                     <div className="flex items-center justify-between border-b border-white/10 pb-3">
                       <h3 className="text-base font-black text-white flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-cyan-400" /> Platform Accuracy & Engagement
@@ -491,21 +491,21 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
                   </div>
 
                   {/* Top Students Panel */}
-                  <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-4">
+                  <div className="glass-panel p-6 rounded-3xl border border-white/10 space-y-4 col-span-1 w-full min-w-0 overflow-hidden box-border">
                     <h3 className="text-base font-black text-white flex items-center gap-2 border-b border-white/10 pb-3">
                       <Award className="w-4 h-4 text-yellow-400" /> Top Active Players
                     </h3>
-                    <div className="space-y-3">
+                    <div className="space-y-3 w-full min-w-0">
                       {leaderboard.slice(0, 4).map((s, idx) => (
-                        <div key={idx} className="flex items-center justify-between gap-3 bg-white/5 p-2.5 rounded-xl border border-white/5 text-xs font-semibold">
-                          <div className="flex items-center gap-2.5">
-                            <span className="w-5 text-slate-400 text-center font-black">{idx + 1}</span>
-                            <span className="text-base">{s.avatar}</span>
-                            <span className="text-slate-200 truncate max-w-[100px]">{s.name}</span>
+                        <div key={idx} className="flex items-center justify-between gap-3 bg-white/5 p-2.5 rounded-xl border border-white/5 text-xs font-semibold w-full min-w-0 box-border hover:bg-white/10 transition-colors">
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <span className="w-5 text-slate-400 text-center font-black shrink-0">{idx + 1}</span>
+                            <span className="text-base shrink-0">{s.avatar || '⚡'}</span>
+                            <span className="text-slate-200 font-bold truncate min-w-0 flex-1" title={s.name}>{s.name}</span>
                           </div>
-                          <div className="text-right">
-                            <span className="text-cyan-400 font-black block">{s.xp} XP</span>
-                            <span className="text-[10px] text-slate-500 block">Lvl {s.level}</span>
+                          <div className="text-right shrink-0">
+                            <span className="text-cyan-400 font-black block whitespace-nowrap">{s.xp?.toLocaleString() || 0} XP</span>
+                            <span className="text-[10px] text-slate-400 block whitespace-nowrap">Lvl {s.level || 1}</span>
                           </div>
                         </div>
                       ))}
@@ -520,10 +520,10 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
 
             {/* VIEW TAB 2: STUDENTS */}
             {activeTab === 'students' && (
-              <div className="space-y-4">
+              <div className="space-y-4 w-full min-w-0">
                 
                 {/* Search / Filters Bar */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-slate-950/40 p-4 rounded-2xl border border-white/10 w-full min-w-0 box-border">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/40 p-4 rounded-2xl border border-white/10 w-full min-w-0 box-border">
                   <div className="relative flex-1 min-w-0 w-full">
                     <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                     <input
@@ -535,40 +535,17 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
                     />
                   </div>
 
-                  <div className="flex items-center gap-2 flex-wrap min-w-0 max-w-full">
-                    <span className="text-xs text-slate-400 font-bold uppercase shrink-0">Filter:</span>
-                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                      <button
-                        onClick={() => { sound.playClick(); setClassFilter('all'); }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
-                          classFilter === 'all' 
-                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-md' 
-                            : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        All Classes
-                      </button>
-                      <button
-                        onClick={() => { sound.playClick(); setClassFilter('9'); }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
-                          classFilter === '9' 
-                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-md' 
-                            : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        Class 9
-                      </button>
-                      <button
-                        onClick={() => { sound.playClick(); setClassFilter('10'); }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
-                          classFilter === '10' 
-                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-md' 
-                            : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        Class 10
-                      </button>
-                    </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-slate-400 font-bold uppercase shrink-0">Filter Class:</span>
+                    <select
+                      value={classFilter}
+                      onChange={(e) => { sound.playClick(); setClassFilter(e.target.value); }}
+                      className="bg-slate-900 border border-purple-500/40 text-slate-100 text-xs font-bold py-2.5 px-3 rounded-xl focus:outline-none focus:border-purple-400 cursor-pointer shadow-md"
+                    >
+                      <option value="all" className="bg-slate-900 text-slate-100">All Classes</option>
+                      <option value="9" className="bg-slate-900 text-slate-100">Class 9</option>
+                      <option value="10" className="bg-slate-900 text-slate-100">Class 10</option>
+                    </select>
                   </div>
                 </div>
 
