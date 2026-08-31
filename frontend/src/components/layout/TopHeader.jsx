@@ -131,7 +131,7 @@ export default function TopHeader({ user, onNavigate, onOpenProfile, isAdmin, on
             }`}
           >
             <ShieldCheck className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            <span className="hidden lg:inline">{isAdmin ? 'Exit Admin' : 'Admin Panel'}</span>
+            <span className="hidden sm:inline">{isAdmin ? 'Exit Admin' : 'Admin Panel'}</span>
           </button>
         </div>
 

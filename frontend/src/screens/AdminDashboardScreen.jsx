@@ -337,18 +337,35 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
           </nav>
         </div>
 
-        {/* Secure Logout button */}
-        <button
-          onClick={() => { sound.playClick(); onLogout(); }}
-          className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl text-xs font-black text-rose-400 border border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/20 transition-all cursor-pointer shadow-lg w-full shrink-0"
-        >
-          <LogOut className="w-4 h-4" />
-          Secure Logout
-        </button>
+        {/* Action Buttons: Exit Admin & Secure Logout */}
+        <div className="flex flex-col gap-2 w-full shrink-0">
+          <button
+            onClick={() => {
+              sound.playClick();
+              if (typeof onExitAdmin === 'function') {
+                onExitAdmin();
+              }
+            }}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black text-cyan-300 border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 transition-all cursor-pointer shadow-md w-full"
+            title="Return to Student View (preserves Admin login session)"
+          >
+            <ShieldCheck className="w-4 h-4 text-cyan-400" />
+            Exit Admin (Student View)
+          </button>
+
+          <button
+            onClick={() => { sound.playClick(); onLogout(); }}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black text-rose-400 border border-rose-500/30 bg-rose-500/5 hover:bg-rose-500/20 transition-all cursor-pointer shadow-md w-full"
+            title="Log out completely from Admin mode"
+          >
+            <LogOut className="w-4 h-4" />
+            Secure Logout
+          </button>
+        </div>
       </div>
 
       {/* Main Panel Viewport */}
-      <div className="flex-1 space-y-6">
+      <div className="flex-1 space-y-6 min-w-0">
         
         {/* Main Banner */}
         <div className="glass-panel p-6 sm:p-8 rounded-3xl text-white shadow-2xl flex flex-wrap items-center justify-between gap-4 border border-purple-500/20 relative overflow-hidden bg-gradient-to-r from-purple-950/70 via-slate-950/80 to-indigo-950/70">
@@ -506,8 +523,8 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
               <div className="space-y-4">
                 
                 {/* Search / Filters Bar */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-slate-950/40 p-4 rounded-2xl border border-white/10">
-                  <div className="relative flex-1 min-w-0">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-slate-950/40 p-4 rounded-2xl border border-white/10 w-full min-w-0 box-border">
+                  <div className="relative flex-1 min-w-0 w-full">
                     <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                     <input
                       type="text"
@@ -518,38 +535,40 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
                     />
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
-                    <span className="text-xs text-slate-400 font-bold uppercase">Filter:</span>
-                    <button
-                      onClick={() => { sound.playClick(); setClassFilter('all'); }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
-                        classFilter === 'all' 
-                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30' 
-                          : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      All Classes
-                    </button>
-                    <button
-                      onClick={() => { sound.playClick(); setClassFilter('9'); }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
-                        classFilter === '9' 
-                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30' 
-                          : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      Class 9
-                    </button>
-                    <button
-                      onClick={() => { sound.playClick(); setClassFilter('10'); }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
-                        classFilter === '10' 
-                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30' 
-                          : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      Class 10
-                    </button>
+                  <div className="flex items-center gap-2 flex-wrap min-w-0 max-w-full">
+                    <span className="text-xs text-slate-400 font-bold uppercase shrink-0">Filter:</span>
+                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                      <button
+                        onClick={() => { sound.playClick(); setClassFilter('all'); }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
+                          classFilter === 'all' 
+                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-md' 
+                            : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        All Classes
+                      </button>
+                      <button
+                        onClick={() => { sound.playClick(); setClassFilter('9'); }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
+                          classFilter === '9' 
+                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-md' 
+                            : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        Class 9
+                      </button>
+                      <button
+                        onClick={() => { sound.playClick(); setClassFilter('10'); }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
+                          classFilter === '10' 
+                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-md' 
+                            : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        Class 10
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -633,39 +652,41 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
               <div className="space-y-4">
                 
                 {/* Question Filter Panel */}
-                <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-950/40 p-4 rounded-2xl border border-white/10">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400 font-bold uppercase">Syllabus filter:</span>
-                    <button
-                      onClick={() => { sound.playClick(); setQuestionClassFilter('all'); }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
-                        questionClassFilter === 'all' 
-                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30' 
-                          : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      All Class Syllabus
-                    </button>
-                    <button
-                      onClick={() => { sound.playClick(); setQuestionClassFilter('9'); }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
-                        questionClassFilter === '9' 
-                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30' 
-                          : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      Class 9 Questions
-                    </button>
-                    <button
-                      onClick={() => { sound.playClick(); setQuestionClassFilter('10'); }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
-                        questionClassFilter === '10' 
-                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30' 
-                          : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      Class 10 Questions
-                    </button>
+                <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-950/40 p-4 rounded-2xl border border-white/10 w-full min-w-0 box-border">
+                  <div className="flex items-center gap-2 flex-wrap min-w-0 max-w-full">
+                    <span className="text-xs text-slate-400 font-bold uppercase shrink-0">Syllabus filter:</span>
+                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                      <button
+                        onClick={() => { sound.playClick(); setQuestionClassFilter('all'); }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
+                          questionClassFilter === 'all' 
+                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-md' 
+                            : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        All Class Syllabus
+                      </button>
+                      <button
+                        onClick={() => { sound.playClick(); setQuestionClassFilter('9'); }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
+                          questionClassFilter === '9' 
+                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-md' 
+                            : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        Class 9 Questions
+                      </button>
+                      <button
+                        onClick={() => { sound.playClick(); setQuestionClassFilter('10'); }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
+                          questionClassFilter === '10' 
+                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-md' 
+                            : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        Class 10 Questions
+                      </button>
+                    </div>
                   </div>
 
                   <span className="text-xs text-slate-400 font-bold">

@@ -14,7 +14,19 @@ export default function NavigationBar({ currentScreen, onNavigate, isAdmin }) {
     { id: 'profile', label: 'Player Profile', icon: User },
   ];
 
-  if (isAdmin) {
+  const hasAdminSession = (() => {
+    if (isAdmin) return true;
+    try {
+      const raw = localStorage.getItem('mathquest_session');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return Boolean(parsed?.token && parsed?.user?.role === 'admin');
+      }
+    } catch (_) {}
+    return false;
+  })();
+
+  if (hasAdminSession) {
     navItems.push({ id: 'admin', label: 'Admin Command', icon: ShieldAlert });
   }
 
