@@ -564,7 +564,7 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin, initialMode =
 
               <div>
                 <label className="block text-xs font-black font-heading text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wider">
-                  {mode === 'admin' ? 'Admin ID' : 'Student Email'}
+                  {mode === 'admin' ? 'Admin Email' : 'Student Email'}
                 </label>
                 <div className="relative">
                   {mode === 'admin' ? (
@@ -573,10 +573,10 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin, initialMode =
                     <Mail className="w-4 h-4 text-indigo-600 dark:text-cyan-400 absolute left-3.5 top-3.5" />
                   )}
                   <input
-                    type={mode === 'admin' ? 'text' : 'email'}
+                    type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={mode === 'admin' ? 'e.g. admin' : 'student@mathquest.edu'}
+                    placeholder={mode === 'admin' ? 'admin@mathquest.edu' : 'student@mathquest.edu'}
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:border-indigo-600 dark:focus:border-cyan-400 outline-none text-sm font-semibold transition-all"
                     required
                   />

@@ -160,7 +160,15 @@ class PersistentDataStore {
     if (adminId) {
       const cleanAdminId = adminId.trim().toLowerCase();
       logIdentifier = cleanAdminId;
-      query = query.eq('email', cleanAdminId);
+      // If the adminId contains '@' treat it as a full email, otherwise query by email column
+      // We still query by email since admin accounts use email as their identifier
+      if (cleanAdminId.includes('@')) {
+        query = query.eq('email', cleanAdminId);
+      } else {
+        // Fallback: treat it as the local part of the email (before the @)
+        // Match any user whose email starts with the adminId prefix
+        query = query.ilike('email', `${cleanAdminId}@%`);
+      }
     } else {
       const cleanEmail = (email || '').trim().toLowerCase();
       logIdentifier = cleanEmail;
