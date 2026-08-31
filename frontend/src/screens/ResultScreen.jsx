@@ -1,10 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Sparkles, Coins, Home, Play, Gift } from 'lucide-react';
+import { Trophy, Sparkles, Coins, Home, Play, Gift, FileText, FileSpreadsheet, Download, Loader2 } from 'lucide-react';
 import { fireConfetti } from '../utils/confetti';
 import { sound } from '../utils/sound';
+import { exportToPDF, exportToExcel } from '../utils/exportResults';
 
 export default function ResultScreen({ resultData, onClaimRewards, onPlayNext, onHome }) {
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isGeneratingExcel, setIsGeneratingExcel] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
+  const [toastType, setToastType] = useState('success');
+
   useEffect(() => {
     fireConfetti();
     sound.playLevelUp();
@@ -21,6 +27,46 @@ export default function ResultScreen({ resultData, onClaimRewards, onPlayNext, o
   };
 
   const accuracy = Math.round((stats.correctCount / stats.totalQuestions) * 100);
+
+  const showNotification = (msg, type = 'success') => {
+    setToastMsg(msg);
+    setToastType(type);
+    setTimeout(() => {
+      setToastMsg('');
+    }, 4000);
+  };
+
+  const handleDownloadPDF = async () => {
+    if (isGeneratingPDF) return;
+    sound.playClick();
+    setIsGeneratingPDF(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      exportToPDF(stats);
+      showNotification('PDF Game Report downloaded successfully!', 'success');
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      showNotification('Failed to generate PDF report. Please try again.', 'error');
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  const handleDownloadExcel = async () => {
+    if (isGeneratingExcel) return;
+    sound.playClick();
+    setIsGeneratingExcel(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      exportToExcel(stats);
+      showNotification('Excel (.xlsx) Results sheet downloaded successfully!', 'success');
+    } catch (err) {
+      console.error('Excel export failed:', err);
+      showNotification('Failed to generate Excel file. Please try again.', 'error');
+    } finally {
+      setIsGeneratingExcel(false);
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-12">
@@ -97,6 +143,62 @@ export default function ResultScreen({ resultData, onClaimRewards, onPlayNext, o
             <span className="text-amber-300">{stats.badgeEarned}</span>
           </div>
         )}
+
+        {/* DOWNLOAD GAME RESULTS SECTION */}
+        <div className="bg-slate-900/80 border border-indigo-500/30 p-5 rounded-2xl mb-6 shadow-xl space-y-3">
+          <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+            <span className="text-xs font-heading font-black text-cyan-300 uppercase tracking-wider flex items-center gap-2">
+              <Download className="w-4 h-4 text-cyan-400" /> Export Official Result Report
+            </span>
+            <span className="text-[10px] text-slate-400 font-bold">PDF & Excel (.xlsx)</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <button
+              disabled={isGeneratingPDF}
+              onClick={handleDownloadPDF}
+              className="py-3 px-4 rounded-xl font-heading font-black text-xs bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white border border-rose-400/40 shadow-lg shadow-rose-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-all"
+            >
+              {isGeneratingPDF ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>Generating PDF Report...</span>
+                </>
+              ) : (
+                <>
+                  <FileText className="w-4 h-4 text-white" />
+                  <span>Download as PDF</span>
+                </>
+              )}
+            </button>
+
+            <button
+              disabled={isGeneratingExcel}
+              onClick={handleDownloadExcel}
+              className="py-3 px-4 rounded-xl font-heading font-black text-xs bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white border border-emerald-400/40 shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-all"
+            >
+              {isGeneratingExcel ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  <span>Generating Excel Sheet...</span>
+                </>
+              ) : (
+                <>
+                  <FileSpreadsheet className="w-4 h-4 text-white" />
+                  <span>Download as Excel (.xlsx)</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {toastMsg && (
+            <div className={`p-2.5 rounded-xl text-xs font-bold text-center border ${
+              toastType === 'success' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+            }`}>
+              {toastMsg}
+            </div>
+          )}
+        </div>
 
         {/* ACTION BUTTONS */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 font-heading">

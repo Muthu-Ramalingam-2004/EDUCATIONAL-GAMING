@@ -7,7 +7,7 @@ import { sound } from '../utils/sound';
 
 export default function GameplayScreen({ mode = 'quiz', levelInfo, onCompleteGame }) {
   const [questionIndex, setQuestionIndex] = useState(0);
-  const [score, setScore] = useState(850);
+  const [score, setScore] = useState(0);
   const [coinsEarned, setCoinsEarned] = useState(0);
   const [xpEarned, setXpEarned] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
@@ -69,9 +69,23 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, onCompleteGam
   }, [questionIndex, isAnswered, dragDropVerified]);
 
   const handleTimeOut = () => {
-    if (!isAnswered) {
+    if (!isAnswered && !dragDropVerified) {
       sound.playWrong();
       setIsAnswered(true);
+
+      const correctOpt = currentQ.options ? currentQ.options.find((o) => o.isCorrect) : null;
+      setUserAnswers((prev) => [
+        ...prev,
+        {
+          questionNumber: questionIndex + 1,
+          question: currentQ.question || 'Maths Problem',
+          userAnswer: 'Time Expired (No Answer)',
+          correctAnswer: correctOpt ? `${correctOpt.id}: ${correctOpt.text}` : (currentQ.answer || 'N/A'),
+          isCorrect: false,
+          marks: 0,
+          explanation: currentQ.explanation || ''
+        }
+      ]);
     }
   };
 
@@ -81,7 +95,10 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, onCompleteGam
     setSelectedOption(option.id);
     setIsAnswered(true);
 
-    if (option.isCorrect) {
+    const isRight = Boolean(option.isCorrect);
+    const correctOpt = currentQ.options ? currentQ.options.find((o) => o.isCorrect) : null;
+
+    if (isRight) {
       sound.playCorrect();
       setScore((prev) => prev + 100);
       setCoinsEarned((prev) => prev + 20);
@@ -90,6 +107,19 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, onCompleteGam
     } else {
       sound.playWrong();
     }
+
+    setUserAnswers((prev) => [
+      ...prev,
+      {
+        questionNumber: questionIndex + 1,
+        question: currentQ.question || 'Maths Problem',
+        userAnswer: `${option.id}: ${option.text}`,
+        correctAnswer: correctOpt ? `${correctOpt.id}: ${correctOpt.text}` : 'N/A',
+        isCorrect: isRight,
+        marks: isRight ? 100 : 0,
+        explanation: currentQ.explanation || ''
+      }
+    ]);
   };
 
   // Puzzle answer submit
@@ -108,6 +138,19 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, onCompleteGam
     } else {
       sound.playWrong();
     }
+
+    setUserAnswers((prev) => [
+      ...prev,
+      {
+        questionNumber: questionIndex + 1,
+        question: currentQ.question || 'Number Sequence Puzzle',
+        userAnswer: String(optText),
+        correctAnswer: String(currentQ.answer),
+        isCorrect: isRight,
+        marks: isRight ? 120 : 0,
+        explanation: currentQ.explanation || ''
+      }
+    ]);
   };
 
   // Move drag drop steps
@@ -136,6 +179,19 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, onCompleteGam
     } else {
       sound.playWrong();
     }
+
+    setUserAnswers((prev) => [
+      ...prev,
+      {
+        questionNumber: questionIndex + 1,
+        question: currentQ.question || 'Proof Reorder Lab',
+        userAnswer: dragDropOrder.join(' ➔ '),
+        correctAnswer: currentQ.correctOrder ? currentQ.correctOrder.join(' ➔ ') : 'N/A',
+        isCorrect: isCorrectOrder,
+        marks: isCorrectOrder ? 150 : 0,
+        explanation: 'Proof steps sequence order verification'
+      }
+    ]);
   };
 
   const handleNext = async () => {
@@ -148,34 +204,33 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, onCompleteGam
       setTimer(30);
     } else {
       // Submit game session to backend
+      let submitRes = {};
       try {
-        const submitRes = await gameService.submitGame(mode, {
+        submitRes = await gameService.submitGame(mode, {
           answers: userAnswers,
           timeTakenSeconds: 105
-        });
-        
-        onCompleteGame({
-          score: submitRes.score || (score + 100),
-          correctCount: submitRes.correctCount || (correctCount + 1),
-          totalQuestions: submitRes.totalQuestions || questionsList.length,
-          accuracyPct: submitRes.accuracyPct || 90,
-          xpEarned: submitRes.xpEarned || (xpEarned + 100),
-          coinsEarned: submitRes.coinsEarned || (coinsEarned + 50),
-          timeTaken: submitRes.timeTaken || '01:45',
-          levelUp: submitRes.levelUp || false,
-          newLevel: submitRes.newLevel,
-          previousLevel: submitRes.previousLevel
-        });
-      } catch (err) {
-        onCompleteGame({
-          score: score + 100,
-          correctCount: correctCount + 1,
-          totalQuestions: questionsList.length,
-          xpEarned: xpEarned + 100,
-          coinsEarned: coinsEarned + 50,
-          timeTaken: '01:45'
-        });
-      }
+        }) || {};
+      } catch (err) {}
+
+      const totalQ = questionsList.length;
+      const finalCorrect = correctCount;
+      const finalWrong = Math.max(0, totalQ - finalCorrect);
+      const actualAccuracy = Math.round((finalCorrect / (totalQ || 1)) * 100);
+
+      onCompleteGame({
+        score: score,
+        correctCount: finalCorrect,
+        wrongCount: finalWrong,
+        totalQuestions: totalQ,
+        accuracyPct: actualAccuracy,
+        xpEarned: xpEarned || (finalCorrect * 50),
+        coinsEarned: coinsEarned || (finalCorrect * 20),
+        timeTaken: '01:45',
+        levelUp: submitRes.levelUp || false,
+        newLevel: submitRes.newLevel,
+        previousLevel: submitRes.previousLevel,
+        questionsDetail: userAnswers
+      });
     }
   };
 

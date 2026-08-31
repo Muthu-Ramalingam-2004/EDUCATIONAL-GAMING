@@ -409,7 +409,16 @@ export default function App() {
               mode={activeMode}
               levelInfo={selectedWorld ? { title: selectedWorld.title } : null}
               onCompleteGame={async (results) => {
-                setGameResult(results);
+                setGameResult({
+                  ...results,
+                  mode: activeMode,
+                  levelTitle: selectedWorld ? selectedWorld.title : (activeMode === 'quiz' ? 'Algebra Arena Quiz' : activeMode === 'puzzle' ? 'Number Sequence Puzzle Lab' : 'Proof Reorder Lab'),
+                  user: {
+                    name: user.name || 'Student Player',
+                    username: user.username || 'student',
+                    activeClass: user.activeClass || 9
+                  }
+                });
                 navigateTo('result');
 
                 try {
