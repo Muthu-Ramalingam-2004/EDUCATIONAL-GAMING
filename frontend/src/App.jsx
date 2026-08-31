@@ -199,7 +199,8 @@ export default function App() {
     setCurrentScreen('admin');
   };
 
-  // Logout Handler
+  // ─── FULL STUDENT LOGOUT ─────────────────────────────────────────────────────
+  // Clears all tokens and returns to splash/login.
   const handleLogout = () => {
     authService.logout();
     setIsAuthenticated(false);
@@ -210,32 +211,81 @@ export default function App() {
     setCurrentScreen('home');
   };
 
-  // Redirect to Admin Login directly
-  const handleGoToAdminLogin = () => {
+  // ─── ADMIN "SECURE LOGOUT" (from Admin Panel sidebar) ───────────────────────
+  // Clears admin token — next Admin Panel visit requires credentials.
+  const handleAdminLogout = () => {
     authService.logout();
     setIsAuthenticated(false);
     setIsAdmin(false);
     setAuthScreenInitialMode('admin');
-    setAuthScreenInitialError('Admin login required.');
+    setAuthScreenInitialError('');
+    setShowSplash(false);
   };
 
-  // Role Guarded Navigation
+  // ─── EXIT ADMIN PANEL (return to student dashboard) ─────────────────────────
+  // Keeps admin token in localStorage. Next Admin Panel click restores silently.
+  const handleExitAdmin = () => {
+    setIsAdmin(false);
+    setIsAuthenticated(true);
+    setCurrentScreen('home');
+  };
+
+  // ─── SHOW ADMIN LOGIN (gate button) ─────────────────────────────────────────
+  const handleGoToAdminLogin = () => {
+    setAuthScreenInitialMode('admin');
+    setAuthScreenInitialError('');
+    setIsAuthenticated(false);
+    setIsAdmin(false);
+  };
+
+  // ─── ROLE-GUARDED NAVIGATION ────────────────────────────────────────────────
   const navigateTo = (screen) => {
-    if (screen === 'admin' && !isAdmin) {
+    if (screen === 'admin') {
+      // Already in admin mode
+      if (isAdmin) {
+        setCurrentScreen('admin');
+        return;
+      }
+      // Check for a stored valid admin session (e.g. after "Exit Admin")
+      try {
+        const raw = localStorage.getItem('mathquest_session');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.token && parsed.user && parsed.user.role === 'admin') {
+            // Silently restore admin session — no credentials needed
+            setIsAdmin(true);
+            setIsAuthenticated(true);
+            setCurrentScreen('admin');
+            return;
+          }
+        }
+      } catch (_) {}
+      // No valid admin session — show the gate
       setCurrentScreen('admin');
       return;
     }
     setCurrentScreen(screen);
   };
 
-  // Handle unauthorized event globally
+  // Handle unauthorized event globally (expired/invalid token)
   useEffect(() => {
     const handleUnauthorized = (e) => {
-      const isCurrentlyAdmin = isAdmin;
+      const wasAdmin = isAdmin;
+      authService.logout();
       setIsAuthenticated(false);
       setIsAdmin(false);
-      setAuthScreenInitialMode(isCurrentlyAdmin ? 'admin' : 'login');
-      setAuthScreenInitialError(e.detail?.message || 'Your session has expired. Please log in again.');
+      if (wasAdmin) {
+        setAuthScreenInitialMode('admin');
+        setAuthScreenInitialError('Your admin session has expired. Please log in again.');
+      } else {
+        setAuthScreenInitialMode('login');
+        const msg = e.detail?.message;
+        setAuthScreenInitialError(
+          typeof msg === 'string' && msg && !msg.includes('[object')
+            ? msg
+            : 'Your session has expired. Please log in again.'
+        );
+      }
     };
 
     window.addEventListener('mathquest_unauthorized', handleUnauthorized);
@@ -280,6 +330,7 @@ export default function App() {
         onOpenProfile={() => navigateTo('profile')}
         isAdmin={isAdmin}
         onLogout={handleLogout}
+        onExitAdmin={handleExitAdmin}
       />
 
       {/* Main Body Layout with Sidebar */}
@@ -420,7 +471,10 @@ export default function App() {
           {/* 17. ADMIN DASHBOARD SCREEN */}
           {currentScreen === 'admin' && (
             isAdmin ? (
-              <AdminDashboardScreen onLogout={handleLogout} />
+              <AdminDashboardScreen
+                onLogout={handleAdminLogout}
+                onExitAdmin={handleExitAdmin}
+              />
             ) : (
               <div className="glass-panel p-8 text-center rounded-3xl max-w-md mx-auto my-12 border border-purple-500/25 shadow-2xl space-y-6 bg-slate-900/60 backdrop-blur-xl">
                 <div className="w-16 h-16 mx-auto bg-purple-500/10 rounded-full flex items-center justify-center border border-purple-500/30 animate-pulse">

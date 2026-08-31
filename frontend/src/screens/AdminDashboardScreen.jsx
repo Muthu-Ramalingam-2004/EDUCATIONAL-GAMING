@@ -8,7 +8,7 @@ import {
 import { adminService } from '../services/adminService';
 import { sound } from '../utils/sound';
 
-export default function AdminDashboardScreen({ onLogout }) {
+export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
   // Navigation Tabs
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'students' | 'questions' | 'leaderboard' | 'games' | 'rewards' | 'reports' | 'settings'
   

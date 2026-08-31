@@ -116,7 +116,10 @@ export default function TopHeader({ user, onNavigate, onOpenProfile, isAdmin, on
             onClick={() => {
               sound.playClick();
               if (isAdmin) {
-                onLogout();
+                // Exit Admin Panel — preserves admin token, returns to student view
+                if (typeof onExitAdmin === 'function') {
+                  onExitAdmin();
+                }
               } else {
                 onNavigate('admin');
               }
