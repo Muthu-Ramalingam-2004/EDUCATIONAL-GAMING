@@ -39,15 +39,24 @@ function safeStr(value, fallback) {
   return String(value) || fallback;
 }
 
-export default function AuthScreen({ onLoginSuccess, onAdminLogin }) {
-  const [mode, setMode] = useState('login'); // 'login' | 'register' | 'admin' | 'forgot'
+export default function AuthScreen({ onLoginSuccess, onAdminLogin, initialMode = 'login', initialError = '' }) {
+  const [mode, setMode] = useState(initialMode); // 'login' | 'register' | 'admin' | 'forgot'
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [classStandard, setClassStandard] = useState(9);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState(initialError);
+
+  // Sync state if props change
+  React.useEffect(() => {
+    if (initialMode) setMode(initialMode);
+  }, [initialMode]);
+
+  React.useEffect(() => {
+    if (initialError) setErrorMsg(initialError);
+  }, [initialError]);
   const [successMsg, setSuccessMsg] = useState('');
 
   // Password Reset States

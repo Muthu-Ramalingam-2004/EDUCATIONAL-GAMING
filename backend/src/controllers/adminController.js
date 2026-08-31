@@ -65,40 +65,59 @@ export function getAdminQuestions(req, res) {
   res.json({ success: true, count: dbService.questions.length, questions: dbService.questions });
 }
 
-export function createQuestion(req, res) {
-  const { questionText, options = [], classStandard = 9, questionType = 'quiz', explanation = '', difficulty = 'Medium', xpReward = 50, coinsReward = 20 } = req.body;
-  
-  const newQ = {
-    id: `q_${Date.now()}`,
-    classStandard: Number(classStandard),
-    questionType,
-    questionText,
-    options,
-    explanation,
-    difficulty,
-    xpReward: Number(xpReward),
-    coinsReward: Number(coinsReward)
-  };
+export async function createQuestion(req, res) {
+  try {
+    const { questionText, options = [], classStandard = 9, questionType = 'quiz', explanation = '', difficulty = 'Medium', xpReward = 50, coinsReward = 20, topicId, chapterId, chapterName, topicName } = req.body;
+    
+    if (!questionText || !questionText.trim()) {
+      return res.status(400).json({ success: false, message: 'Question text is required.' });
+    }
 
-  dbService.questions.push(newQ);
-  res.status(201).json({ success: true, message: 'Question created successfully', question: newQ });
-}
+    const newQ = await dbService.createQuestion({
+      questionText: questionText.trim(),
+      options,
+      classStandard: Number(classStandard),
+      questionType,
+      explanation,
+      difficulty,
+      xpReward: Number(xpReward),
+      coinsReward: Number(coinsReward),
+      topicId,
+      chapterId,
+      chapterName,
+      topicName
+    });
 
-export function updateQuestion(req, res) {
-  const { id } = req.params;
-  const qIndex = dbService.questions.findIndex(q => q.id === id);
-  if (qIndex === -1) {
-    return res.status(404).json({ success: false, message: 'Question not found' });
+    res.status(201).json({ success: true, message: 'Question created successfully', question: newQ });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-
-  dbService.questions[qIndex] = { ...dbService.questions[qIndex], ...req.body };
-  res.json({ success: true, message: 'Question updated', question: dbService.questions[qIndex] });
 }
 
-export function deleteQuestion(req, res) {
-  const { id } = req.params;
-  dbService.questions = dbService.questions.filter(q => q.id !== id);
-  res.json({ success: true, message: 'Question deleted successfully' });
+export async function updateQuestion(req, res) {
+  try {
+    const { id } = req.params;
+    const updated = await dbService.updateQuestion(id, req.body);
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Question not found' });
+    }
+    res.json({ success: true, message: 'Question updated successfully', question: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
+
+export async function deleteQuestion(req, res) {
+  try {
+    const { id } = req.params;
+    const success = await dbService.deleteQuestion(id);
+    if (!success) {
+      return res.status(404).json({ success: false, message: 'Question not found' });
+    }
+    res.json({ success: true, message: 'Question deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 }
 
 // Students CRUD

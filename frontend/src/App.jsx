@@ -4,6 +4,7 @@ import { initialUserData } from './data/mockUser';
 
 // Services
 import { authService } from './services/authService';
+import { adminService } from './services/adminService';
 import { progressService } from './services/progressService';
 import { gameService } from './services/gameService';
 import { rewardService } from './services/rewardService';
@@ -42,6 +43,8 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState(initialUserData);
+  const [authScreenInitialMode, setAuthScreenInitialMode] = useState('login');
+  const [authScreenInitialError, setAuthScreenInitialError] = useState('');
 
   // Navigation state
   const [currentScreen, setCurrentScreen] = useState('home');
@@ -65,6 +68,9 @@ export default function App() {
             setIsAdmin(true);
             setIsAuthenticated(true);
             setCurrentScreen('admin');
+            
+            // Asynchronously verify token validity
+            adminService.getDashboardStats();
           } else if (parsed.student) {
             setUser((prev) => ({
               ...prev,
@@ -179,6 +185,8 @@ export default function App() {
 
     setIsAuthenticated(true);
     setIsAdmin(false);
+    setAuthScreenInitialMode('login');
+    setAuthScreenInitialError('');
     setCurrentScreen('home');
   };
 
@@ -186,6 +194,8 @@ export default function App() {
   const handleAdminLoginSuccess = (adminPayload) => {
     setIsAuthenticated(true);
     setIsAdmin(true);
+    setAuthScreenInitialMode('login');
+    setAuthScreenInitialError('');
     setCurrentScreen('admin');
   };
 
@@ -194,19 +204,45 @@ export default function App() {
     authService.logout();
     setIsAuthenticated(false);
     setIsAdmin(false);
+    setAuthScreenInitialMode('login');
+    setAuthScreenInitialError('');
     setShowSplash(true);
     setCurrentScreen('home');
+  };
+
+  // Redirect to Admin Login directly
+  const handleGoToAdminLogin = () => {
+    authService.logout();
+    setIsAuthenticated(false);
+    setIsAdmin(false);
+    setAuthScreenInitialMode('admin');
+    setAuthScreenInitialError('Admin login required.');
   };
 
   // Role Guarded Navigation
   const navigateTo = (screen) => {
     if (screen === 'admin' && !isAdmin) {
-      alert('Access Denied. Admin credentials required.');
-      setCurrentScreen('home');
+      setCurrentScreen('admin');
       return;
     }
     setCurrentScreen(screen);
   };
+
+  // Handle unauthorized event globally
+  useEffect(() => {
+    const handleUnauthorized = (e) => {
+      const isCurrentlyAdmin = isAdmin;
+      setIsAuthenticated(false);
+      setIsAdmin(false);
+      setAuthScreenInitialMode(isCurrentlyAdmin ? 'admin' : 'login');
+      setAuthScreenInitialError(e.detail?.message || 'Your session has expired. Please log in again.');
+    };
+
+    window.addEventListener('mathquest_unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('mathquest_unauthorized', handleUnauthorized);
+    };
+  }, [isAdmin]);
 
   if (showSplash) {
     return (
@@ -223,6 +259,8 @@ export default function App() {
       <AuthScreen
         onLoginSuccess={handleStudentLoginSuccess}
         onAdminLogin={handleAdminLoginSuccess}
+        initialMode={authScreenInitialMode}
+        initialError={authScreenInitialError}
       />
     );
   }
@@ -241,7 +279,7 @@ export default function App() {
         onNavigate={navigateTo}
         onOpenProfile={() => navigateTo('profile')}
         isAdmin={isAdmin}
-        setIsAdmin={setIsAdmin}
+        onLogout={handleLogout}
       />
 
       {/* Main Body Layout with Sidebar */}
@@ -384,10 +422,30 @@ export default function App() {
             isAdmin ? (
               <AdminDashboardScreen onLogout={handleLogout} />
             ) : (
-              <div className="glass-panel p-8 text-center rounded-3xl space-y-4">
-                <h2 className="text-2xl font-black text-rose-600 font-heading">Access Denied</h2>
-                <p className="text-sm font-semibold">Admin privileges required to view this Command Center.</p>
-                <button onClick={() => navigateTo('home')} className="btn-game-primary py-2 px-6">Return to Home</button>
+              <div className="glass-panel p-8 text-center rounded-3xl max-w-md mx-auto my-12 border border-purple-500/25 shadow-2xl space-y-6 bg-slate-900/60 backdrop-blur-xl">
+                <div className="w-16 h-16 mx-auto bg-purple-500/10 rounded-full flex items-center justify-center border border-purple-500/30 animate-pulse">
+                  <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 font-heading">Admin Mode Required</h2>
+                  <p className="text-sm text-slate-300 font-semibold px-4">You must be authenticated as an Administrator to access the Command Center.</p>
+                </div>
+                <div className="flex flex-col gap-3 pt-2">
+                  <button 
+                    onClick={handleGoToAdminLogin} 
+                    className="btn-game-primary bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-extrabold py-3 px-6 rounded-2xl shadow-lg shadow-purple-500/30 transition-all cursor-pointer border-t border-white/20"
+                  >
+                    Go to Admin Mode Login
+                  </button>
+                  <button 
+                    onClick={() => navigateTo('home')} 
+                    className="text-xs font-bold text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    Back to Student Dashboard
+                  </button>
+                </div>
               </div>
             )
           )}

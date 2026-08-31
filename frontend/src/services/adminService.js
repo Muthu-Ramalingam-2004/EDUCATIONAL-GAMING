@@ -2,82 +2,42 @@ import apiClient from './api';
 
 export const adminService = {
   async getDashboardStats() {
-    try {
-      return await apiClient.get('/admin/dashboard');
-    } catch (err) {
-      return { success: false };
-    }
+    return await apiClient.get('/admin/dashboard');
   },
 
   async getQuestions() {
-    try {
-      return await apiClient.get('/admin/questions');
-    } catch (err) {
-      return { success: false };
-    }
+    return await apiClient.get('/admin/questions');
   },
 
   async createQuestion(questionData) {
-    try {
-      return await apiClient.post('/admin/questions', questionData);
-    } catch (err) {
-      return { success: false };
-    }
+    return await apiClient.post('/admin/questions', questionData);
   },
 
   async updateQuestion(id, questionData) {
-    try {
-      return await apiClient.put(`/admin/questions/${id}`, questionData);
-    } catch (err) {
-      return { success: false };
-    }
+    return await apiClient.put(`/admin/questions/${id}`, questionData);
   },
 
   async deleteQuestion(id) {
-    try {
-      return await apiClient.delete(`/admin/questions/${id}`);
-    } catch (err) {
-      return { success: false };
-    }
+    return await apiClient.delete(`/admin/questions/${id}`);
   },
 
   async getStudents() {
-    try {
-      return await apiClient.get('/admin/students');
-    } catch (err) {
-      return { success: false };
-    }
+    return await apiClient.get('/admin/students');
   },
 
   async updateStudent(id, studentData) {
-    try {
-      return await apiClient.put(`/admin/students/${id}`, studentData);
-    } catch (err) {
-      return { success: false };
-    }
+    return await apiClient.put(`/admin/students/${id}`, studentData);
   },
 
   async deleteStudent(id) {
-    try {
-      return await apiClient.delete(`/admin/students/${id}`);
-    } catch (err) {
-      return { success: false };
-    }
+    return await apiClient.delete(`/admin/students/${id}`);
   },
 
   async getLeaderboard() {
-    try {
-      return await apiClient.get('/admin/leaderboard');
-    } catch (err) {
-      return { success: false };
-    }
+    return await apiClient.get('/admin/leaderboard');
   },
 
   async getBadges() {
-    try {
-      return await apiClient.get('/admin/badges');
-    } catch (err) {
-      return { success: false };
-    }
+    return await apiClient.get('/admin/badges');
   }
 };

@@ -145,6 +145,17 @@ apiClient.interceptors.response.use(
   (error) => {
     const message = extractErrorMessage(error);
 
+    // Global 401 handler: clear localStorage and notify App.jsx
+    if (error && error.response && error.response.status === 401) {
+      try {
+        localStorage.removeItem('mathquest_token');
+        localStorage.removeItem('mathquest_session');
+        window.dispatchEvent(new CustomEvent('mathquest_unauthorized', {
+          detail: { message }
+        }));
+      } catch (_e) {}
+    }
+
     // Diagnostic console log — helps debug production issues in DevTools
     // Never shown to the user
     console.error('[MathQuest API Error]', {

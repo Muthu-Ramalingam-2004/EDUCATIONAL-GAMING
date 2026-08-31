@@ -160,7 +160,7 @@ class PersistentDataStore {
     if (adminId) {
       const cleanAdminId = adminId.trim().toLowerCase();
       logIdentifier = cleanAdminId;
-      query = query.or(`admin_id.eq.${cleanAdminId},email.eq.${cleanAdminId}`);
+      query = query.eq('email', cleanAdminId);
     } else {
       const cleanEmail = (email || '').trim().toLowerCase();
       logIdentifier = cleanEmail;
@@ -385,7 +385,6 @@ class PersistentDataStore {
     });
 
     const attempt = {
-      id: `att_${Date.now()}`,
       studentId: student.id,
       gameId,
       score,
@@ -397,6 +396,38 @@ class PersistentDataStore {
       coinsEarned,
       completedAt: new Date().toISOString()
     };
+
+    if (supabase) {
+      try {
+        const { data: newAttempt, error: attemptErr } = await supabase
+          .from('student_game_attempts')
+          .insert([{
+            student_id: student.id,
+            game_id: gameId,
+            score,
+            correct_count: correctCount,
+            total_questions: totalQuestions,
+            accuracy_pct: accuracyPct,
+            time_taken_seconds: timeTakenSeconds,
+            xp_earned: xpEarned,
+            coins_earned: coinsEarned
+          }])
+          .select()
+          .single();
+
+        if (attemptErr) {
+          console.error('[DB] Insert game attempt error:', attemptErr.message);
+        } else if (newAttempt) {
+          attempt.id = newAttempt.id;
+          attempt.completedAt = newAttempt.completed_at;
+        }
+      } catch (err) {
+        console.error('[DB] Insert game attempt exception:', err.message);
+      }
+    } else {
+      attempt.id = `att_${Date.now()}`;
+      this.gameAttempts.push(attempt);
+    }
 
     return {
       attempt,
@@ -428,15 +459,404 @@ class PersistentDataStore {
     return { success: true, student: updatedStudent || student };
   }
 
-  // Leaderboard
-  getLeaderboard() {
-    return [
-      { rank: 1, name: "Aarav Sharma", avatar: "👑", level: 18, xp: 4850, score: 1420, streak: 12, isCurrentUser: false },
-      { rank: 2, name: "Diya Patel", avatar: "🌟", level: 16, xp: 4120, score: 1350, streak: 9, isCurrentUser: false },
-      { rank: 3, name: "Muthu Ram", avatar: "⚡", level: 12, xp: 2450, score: 1250, streak: 5, isCurrentUser: false },
-      { rank: 4, name: "Kavya Nair", avatar: "🔥", level: 14, xp: 3290, score: 1190, streak: 8, isCurrentUser: false },
-      { rank: 5, name: "Rohan Verma", avatar: "🎯", level: 11, xp: 2180, score: 1050, streak: 4, isCurrentUser: false }
-    ];
+  // ─── GET LEADERBOARD (STUDENT & ADMIN API) ────────────────────────────────
+  async getLeaderboard(period = 'overall') {
+    if (!supabase) {
+      return [
+        { rank: 1, name: "Aarav Sharma", avatar: "👑", level: 18, xp: 4850, score: 1420, streak: 12, isCurrentUser: false },
+        { rank: 2, name: "Diya Patel", avatar: "🌟", level: 16, xp: 4120, score: 1350, streak: 9, isCurrentUser: false },
+        { rank: 3, name: "Muthu Ram", avatar: "⚡", level: 12, xp: 2450, score: 1250, streak: 5, isCurrentUser: false },
+        { rank: 4, name: "Kavya Nair", avatar: "🔥", level: 14, xp: 3290, score: 1190, streak: 8, isCurrentUser: false },
+        { rank: 5, name: "Rohan Verma", avatar: "🎯", level: 11, xp: 2180, score: 1050, streak: 4, isCurrentUser: false }
+      ];
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .order('total_xp', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      return (data || []).map((row, idx) => ({
+        rank: idx + 1,
+        name: row.name || 'Student',
+        avatar: row.avatar || '⚡',
+        level: Number(row.level) || 1,
+        xp: Number(row.total_xp) || 0,
+        score: Number(row.best_score) || 0,
+        streak: Number(row.streak_days) || 1,
+        isCurrentUser: false
+      }));
+    } catch (err) {
+      console.error('[DB] getLeaderboard error:', err.message);
+      return [];
+    }
+  }
+
+  // ─── SEED QUESTIONS IF EMPTY (STARTUP CONFIG) ─────────────────────────────
+  async seedQuestionsIfEmpty() {
+    if (!supabase) return;
+    try {
+      const { count, error: countErr } = await supabase
+        .from('questions')
+        .select('*', { count: 'exact', head: true });
+
+      if (countErr) throw countErr;
+
+      if (count > 0) {
+        console.log('⚡ [DB] Database questions table already contains data. Skipping seeding.');
+        return;
+      }
+
+      console.log('🌱 [DB] Seeding database with initial questions, chapters, and topics...');
+      
+      const insertedChapters = new Set();
+      const insertedTopics = new Set();
+
+      for (const q of initialQuestionsData) {
+        const classStandard = Number(q.classStandard) || 9;
+        
+        // 1. Ensure Chapter exists
+        const chapId = q.chapterId || `class${classStandard}_world1`;
+        if (!insertedChapters.has(chapId)) {
+          const { data: existingChap } = await supabase
+            .from('chapters')
+            .select('id')
+            .eq('id', chapId)
+            .maybeSingle();
+            
+          if (!existingChap) {
+            const chapTitle = q.chapterName || q.chapterId || 'Number Quest';
+            await supabase
+              .from('chapters')
+              .insert([{
+                id: chapId,
+                class_standard: classStandard,
+                title: chapTitle,
+                subtitle: 'Mathematical Challenges',
+                icon: '🎮',
+                color_gradient: classStandard === 10 ? 'from-green-600 to-teal-700' : 'from-blue-600 to-indigo-700',
+                total_levels: 5,
+                order_index: 1
+              }]);
+          }
+          insertedChapters.add(chapId);
+        }
+
+        // 2. Ensure Topic exists
+        const topicId = q.topicId || 'number_systems';
+        if (!insertedTopics.has(topicId)) {
+          const { data: existingTopic } = await supabase
+            .from('topics')
+            .select('id')
+            .eq('id', topicId)
+            .maybeSingle();
+
+          if (!existingTopic) {
+            const topicTitle = q.topicName || q.topicId || 'Number Systems';
+            await supabase
+              .from('topics')
+              .insert([{
+                id: topicId,
+                chapter_id: chapId,
+                title: topicTitle,
+                description: `Learn and solve problems on ${topicTitle}`
+              }]);
+          }
+          insertedTopics.add(topicId);
+        }
+
+        // 3. Insert Question
+        const questionPayload = {
+          id: q.id,
+          topic_id: topicId,
+          class_standard: classStandard,
+          question_type: q.questionType || 'quiz',
+          question_text: q.questionText,
+          problem_statement: q.problemStatement || null,
+          sequence_json: q.sequenceJson ? q.sequenceJson : null,
+          explanation: q.explanation || '',
+          hint: q.hint || '',
+          difficulty: q.difficulty || 'Medium',
+          xp_reward: Number(q.xpReward) || 50,
+          coins_reward: Number(q.coinsReward) || 20
+        };
+
+        const { error: qErr } = await supabase
+          .from('questions')
+          .insert([questionPayload]);
+
+        if (qErr) {
+          console.error(`[DB] Error seeding question ${q.id}:`, qErr.message);
+          continue;
+        }
+
+        // 4. Insert Question Options
+        if (Array.isArray(q.options) && q.options.length > 0) {
+          const optionsPayload = q.options.map(opt => ({
+            question_id: q.id,
+            option_key: opt.id,
+            option_text: opt.text,
+            is_correct: !!opt.isCorrect
+          }));
+
+          const { error: optErr } = await supabase
+            .from('question_options')
+            .insert(optionsPayload);
+
+          if (optErr) {
+            console.error(`[DB] Error seeding options for question ${q.id}:`, optErr.message);
+          }
+        }
+      }
+
+      console.log('✅ [DB] Seeding completed successfully!');
+    } catch (err) {
+      console.error('❌ [DB] Seeding failed:', err.message);
+    }
+  }
+
+  // ─── LOAD QUESTIONS FROM DATABASE (SYNC WITH SUPABASE) ────────────────────
+  async loadQuestionsFromDb() {
+    if (!supabase) return;
+    try {
+      console.log('🔍 [DB] Loading questions from Supabase...');
+      const { data: qData, error: qErr } = await supabase
+        .from('questions')
+        .select('*');
+
+      if (qErr) throw qErr;
+
+      const { data: optData, error: optErr } = await supabase
+        .from('question_options')
+        .select('*');
+
+      if (optErr) throw optErr;
+
+      const optionsMap = {};
+      if (optData) {
+        optData.forEach(opt => {
+          if (!optionsMap[opt.question_id]) {
+            optionsMap[opt.question_id] = [];
+          }
+          optionsMap[opt.question_id].push({
+            id: opt.option_key,
+            text: opt.option_text,
+            isCorrect: !!opt.is_correct
+          });
+        });
+      }
+
+      const formattedQuestions = (qData || []).map(q => ({
+        id: q.id,
+        classStandard: Number(q.class_standard),
+        topicId: q.topic_id,
+        questionType: q.question_type,
+        questionText: q.question_text,
+        problemStatement: q.problem_statement,
+        sequenceJson: q.sequence_json ? (typeof q.sequence_json === 'string' ? JSON.parse(q.sequence_json) : q.sequence_json) : null,
+        explanation: q.explanation,
+        hint: q.hint,
+        difficulty: q.difficulty,
+        xpReward: Number(q.xp_reward),
+        coinsReward: Number(q.coins_reward),
+        options: optionsMap[q.id] || []
+      }));
+
+      formattedQuestions.sort((a, b) => a.id.localeCompare(b.id));
+
+      this.questions = formattedQuestions;
+      console.log(`✅ [DB] Loaded ${this.questions.length} questions from database.`);
+    } catch (err) {
+      console.error('❌ [DB] Failed to load questions from database:', err.message);
+    }
+  }
+
+  // ─── CREATE QUESTION (ADMIN API) ──────────────────────────────────────────
+  async createQuestion(q) {
+    if (!supabase) {
+      const newQ = { ...q, id: q.id || `q_${Date.now()}` };
+      this.questions.push(newQ);
+      return newQ;
+    }
+
+    try {
+      const classStandard = Number(q.classStandard) || 9;
+      const chapId = q.chapterId || `class${classStandard}_world1`;
+      const topicId = q.topicId || 'number_systems';
+      const questionId = q.id || `q_${Date.now()}`;
+
+      // Ensure topic and chapter exist
+      const { data: existingTopic } = await supabase
+        .from('topics')
+        .select('id')
+        .eq('id', topicId)
+        .maybeSingle();
+
+      if (!existingTopic) {
+        // Ensure chapter exists
+        const { data: existingChap } = await supabase
+          .from('chapters')
+          .select('id')
+          .eq('id', chapId)
+          .maybeSingle();
+
+        if (!existingChap) {
+          await supabase
+            .from('chapters')
+            .insert([{
+              id: chapId,
+              class_standard: classStandard,
+              title: q.chapterName || 'Number Quest',
+              subtitle: 'Mathematical Challenges',
+              icon: '🎮',
+              color_gradient: classStandard === 10 ? 'from-green-600 to-teal-700' : 'from-blue-600 to-indigo-700',
+              total_levels: 5,
+              order_index: 1
+            }]);
+        }
+
+        await supabase
+          .from('topics')
+          .insert([{
+            id: topicId,
+            chapter_id: chapId,
+            title: q.topicName || 'Number Systems',
+            description: `Learn and solve problems on ${q.topicName || 'Number Systems'}`
+          }]);
+      }
+
+      const questionPayload = {
+        id: questionId,
+        topic_id: topicId,
+        class_standard: classStandard,
+        question_type: q.questionType || 'quiz',
+        question_text: q.questionText,
+        problem_statement: q.problemStatement || null,
+        sequence_json: q.sequenceJson ? q.sequenceJson : null,
+        explanation: q.explanation || '',
+        hint: q.hint || '',
+        difficulty: q.difficulty || 'Medium',
+        xp_reward: Number(q.xpReward) || 50,
+        coins_reward: Number(q.coinsReward) || 20
+      };
+
+      const { error: qErr } = await supabase
+        .from('questions')
+        .insert([questionPayload]);
+
+      if (qErr) throw qErr;
+
+      if (Array.isArray(q.options) && q.options.length > 0) {
+        const optionsPayload = q.options.map(opt => ({
+          question_id: questionId,
+          option_key: opt.id,
+          option_text: opt.text,
+          is_correct: !!opt.isCorrect
+        }));
+
+        const { error: optErr } = await supabase
+          .from('question_options')
+          .insert(optionsPayload);
+
+        if (optErr) throw optErr;
+      }
+
+      await this.loadQuestionsFromDb();
+      return this.questions.find(item => item.id === questionId);
+    } catch (err) {
+      console.error('[DB] createQuestion error:', err.message);
+      throw new Error(`Failed to create question in database: ${err.message}`);
+    }
+  }
+
+  // ─── UPDATE QUESTION (ADMIN API) ──────────────────────────────────────────
+  async updateQuestion(id, q) {
+    if (!supabase) {
+      const idx = this.questions.findIndex(item => item.id === id);
+      if (idx !== -1) {
+        this.questions[idx] = { ...this.questions[idx], ...q };
+        return this.questions[idx];
+      }
+      return null;
+    }
+
+    try {
+      const dbUpdates = {};
+      if (q.questionText !== undefined) dbUpdates.question_text = q.questionText;
+      if (q.classStandard !== undefined) dbUpdates.class_standard = Number(q.classStandard);
+      if (q.questionType !== undefined) dbUpdates.question_type = q.questionType;
+      if (q.explanation !== undefined) dbUpdates.explanation = q.explanation;
+      if (q.difficulty !== undefined) dbUpdates.difficulty = q.difficulty;
+      if (q.xpReward !== undefined) dbUpdates.xp_reward = Number(q.xpReward);
+      if (q.coinsReward !== undefined) dbUpdates.coins_reward = Number(q.coinsReward);
+      if (q.topicId !== undefined) dbUpdates.topic_id = q.topicId;
+
+      if (Object.keys(dbUpdates).length > 0) {
+        const { error: uErr } = await supabase
+          .from('questions')
+          .update(dbUpdates)
+          .eq('id', id);
+
+        if (uErr) throw uErr;
+      }
+
+      if (Array.isArray(q.options)) {
+        const { error: dErr } = await supabase
+          .from('question_options')
+          .delete()
+          .eq('question_id', id);
+
+        if (dErr) throw dErr;
+
+        if (q.options.length > 0) {
+          const optionsPayload = q.options.map(opt => ({
+            question_id: id,
+            option_key: opt.id,
+            option_text: opt.text,
+            is_correct: !!opt.isCorrect
+          }));
+
+          const { error: optErr } = await supabase
+            .from('question_options')
+            .insert(optionsPayload);
+
+          if (optErr) throw optErr;
+        }
+      }
+
+      await this.loadQuestionsFromDb();
+      return this.questions.find(item => item.id === id);
+    } catch (err) {
+      console.error('[DB] updateQuestion error:', err.message);
+      throw new Error(`Failed to update question in database: ${err.message}`);
+    }
+  }
+
+  // ─── DELETE QUESTION (ADMIN API) ──────────────────────────────────────────
+  async deleteQuestion(id) {
+    if (!supabase) {
+      this.questions = this.questions.filter(item => item.id !== id);
+      return true;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('questions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      await this.loadQuestionsFromDb();
+      return true;
+    } catch (err) {
+      console.error('[DB] deleteQuestion error:', err.message);
+      throw new Error(`Failed to delete question from database: ${err.message}`);
+    }
   }
 
   // Admin stats
@@ -574,3 +994,10 @@ class PersistentDataStore {
 }
 
 export const dbService = new PersistentDataStore();
+
+// Async database initialization on startup
+if (supabase) {
+  dbService.seedQuestionsIfEmpty()
+    .then(() => dbService.loadQuestionsFromDb())
+    .catch(err => console.error('[DB] Startup seeding/loading error:', err.message));
+}

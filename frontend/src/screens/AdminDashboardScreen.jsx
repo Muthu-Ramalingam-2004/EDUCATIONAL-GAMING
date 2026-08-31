@@ -18,6 +18,7 @@ export default function AdminDashboardScreen({ onLogout }) {
   const [leaderboard, setLeaderboard] = useState([]);
   const [badges, setBadges] = useState([]);
   const [adminStats, setAdminStats] = useState(null);
+  const [errorMessage, setErrorMessage] = useState('');
   
   // UI States
   const [loading, setLoading] = useState(true);
@@ -60,33 +61,45 @@ export default function AdminDashboardScreen({ onLogout }) {
   // Load initial data
   const loadData = async () => {
     setLoading(true);
+    setErrorMessage('');
     try {
       const statsRes = await adminService.getDashboardStats();
       if (statsRes && statsRes.success) {
         setAdminStats(statsRes.stats);
+      } else {
+        throw new Error('Failed to load dashboard statistics.');
       }
       
       const qRes = await adminService.getQuestions();
       if (qRes && qRes.success && Array.isArray(qRes.questions)) {
         setQuestions(qRes.questions);
+      } else {
+        throw new Error('Failed to load syllabus question bank.');
       }
       
       const sRes = await adminService.getStudents();
       if (sRes && sRes.success && Array.isArray(sRes.students)) {
         setStudents(sRes.students);
+      } else {
+        throw new Error('Failed to load student profiles.');
       }
       
       const lRes = await adminService.getLeaderboard();
       if (lRes && lRes.success && Array.isArray(lRes.leaderboard)) {
         setLeaderboard(lRes.leaderboard);
+      } else {
+        throw new Error('Failed to load leaderboard data.');
       }
       
       const bRes = await adminService.getBadges();
       if (bRes && bRes.success && Array.isArray(bRes.badges)) {
         setBadges(bRes.badges);
+      } else {
+        throw new Error('Failed to load achievement badges.');
       }
     } catch (err) {
       console.error('Error fetching admin data:', err);
+      setErrorMessage(err.message || 'Unable to load dashboard data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -370,6 +383,13 @@ export default function AdminDashboardScreen({ onLogout }) {
             </button>
           </div>
         </div>
+
+        {errorMessage && (
+          <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 p-4 rounded-2xl flex items-center gap-3 text-sm font-semibold shadow-lg">
+            <ShieldAlert className="w-5 h-5 flex-shrink-0 animate-bounce" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
 
         {/* Global Loading Spinner */}
         {loading && (

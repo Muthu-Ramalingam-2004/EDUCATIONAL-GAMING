@@ -4,7 +4,7 @@ import { Flame, Coins, ShieldCheck, Sparkles, Sun, Moon, Zap } from 'lucide-reac
 import { sound } from '../../utils/sound';
 import { useTheme } from '../../context/ThemeContext';
 
-export default function TopHeader({ user, onNavigate, onOpenProfile, isAdmin, setIsAdmin }) {
+export default function TopHeader({ user, onNavigate, onOpenProfile, isAdmin, onLogout }) {
   const { isDark, toggleTheme } = useTheme();
   const xpPercent = Math.min(100, Math.round((user.xp / (user.nextLevelXp || 1000)) * 100));
 
@@ -115,8 +115,11 @@ export default function TopHeader({ user, onNavigate, onOpenProfile, isAdmin, se
           <button
             onClick={() => {
               sound.playClick();
-              setIsAdmin(!isAdmin);
-              onNavigate(isAdmin ? 'home' : 'admin');
+              if (isAdmin) {
+                onLogout();
+              } else {
+                onNavigate('admin');
+              }
             }}
             className={`px-3.5 py-2 rounded-xl font-extrabold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-md font-heading ${
               isAdmin 
