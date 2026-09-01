@@ -707,29 +707,11 @@ class PersistentDataStore {
       filtered = filtered.filter(q => q.questionType === questionType);
     }
 
-    // Fallback if no specific questionType match for that level, relax questionType
-    if (filtered.length === 0 && levelNumber && (chapterId || topicId)) {
-      filtered = this.questions.filter(q =>
-        (!classStandard || Number(q.classStandard) === Number(classStandard)) &&
-        ((chapterId && q.chapterId === chapterId) || (topicId && q.topicId === topicId)) &&
-        Number(q.levelNumber) === Number(levelNumber)
-      );
-    }
+    // We removed the ultimate global fallbacks here per requirements. 
+    // If filtered is empty, it should return [] rather than polluting the game with unrelated questions.
 
-    // Fallback if no specific level match for that topic, relax levelNumber
-    if (filtered.length === 0 && (chapterId || topicId)) {
-      filtered = this.questions.filter(q =>
-        (!classStandard || Number(q.classStandard) === Number(classStandard)) &&
-        ((chapterId && q.chapterId === chapterId) || (topicId && q.topicId === topicId))
-      );
-    }
-
-    // Ultimate fallback if no questions found at all
-    if (filtered.length === 0) {
-      filtered = this.questions.filter(q => !questionType || q.questionType === questionType);
-    }
-
-    return filtered;
+    // Limit to 5 questions per session max for gameplay
+    return filtered.slice(0, 5);
   }
 
   // ─── CREATE QUESTION (ADMIN API) ──────────────────────────────────────────

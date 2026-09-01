@@ -66,8 +66,8 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
 
   // Initialize Drag and drop steps if dragdrop mode
   useEffect(() => {
-    if (mode === 'dragdrop' && currentQ && currentQ.initialShuffled) {
-      setDragDropOrder([...currentQ.initialShuffled]);
+    if (mode === 'dragdrop' && currentQ && (currentQ.sequenceJson?.initialShuffled || currentQ.initialShuffled)) {
+      setDragDropOrder([...(currentQ.sequenceJson?.initialShuffled || currentQ.initialShuffled)]);
       setDragDropVerified(false);
     }
   }, [questionIndex, mode, currentQ]);
@@ -98,9 +98,9 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
         ...prev,
         {
           questionNumber: questionIndex + 1,
-          question: currentQ.question || 'Maths Problem',
+          question: currentQ.questionText || currentQ.question || 'Maths Problem',
           userAnswer: 'Time Expired (No Answer)',
-          correctAnswer: correctOpt ? `${correctOpt.id}: ${correctOpt.text}` : (currentQ.answer || 'N/A'),
+          correctAnswer: correctOpt ? `${correctOpt.id}: ${correctOpt.text}` : (currentQ.sequenceJson?.answer || currentQ.answer || 'N/A'),
           isCorrect: false,
           marks: 0,
           explanation: currentQ.explanation || ''
@@ -132,7 +132,7 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
       ...prev,
       {
         questionNumber: questionIndex + 1,
-        question: currentQ.question || 'Maths Problem',
+        question: currentQ.questionText || currentQ.question || 'Maths Problem',
         userAnswer: `${option.id}: ${option.text}`,
         correctAnswer: correctOpt ? `${correctOpt.id}: ${correctOpt.text}` : 'N/A',
         isCorrect: isRight,
@@ -145,7 +145,7 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
   // Puzzle answer submit
   const handlePuzzleOptionClick = (optText) => {
     if (isAnswered) return;
-    const isRight = optText === currentQ.answer;
+    const isRight = optText === (currentQ.sequenceJson?.answer || currentQ.answer);
     setSelectedOption(optText);
     setIsAnswered(true);
 
@@ -163,9 +163,9 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
       ...prev,
       {
         questionNumber: questionIndex + 1,
-        question: currentQ.question || 'Number Sequence Puzzle',
+        question: currentQ.questionText || currentQ.question || 'Number Sequence Puzzle',
         userAnswer: String(optText),
-        correctAnswer: String(currentQ.answer),
+        correctAnswer: String(currentQ.sequenceJson?.answer || currentQ.answer),
         isCorrect: isRight,
         marks: isRight ? 120 : 0,
         explanation: currentQ.explanation || ''
@@ -186,7 +186,8 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
   };
 
   const handleVerifyDragDrop = () => {
-    const isCorrectOrder = JSON.stringify(dragDropOrder) === JSON.stringify(currentQ.correctOrder);
+    const correctOrder = currentQ.sequenceJson?.correctOrder || currentQ.correctOrder;
+    const isCorrectOrder = JSON.stringify(dragDropOrder) === JSON.stringify(correctOrder);
     setDragDropVerified(true);
     setDragDropIsCorrect(isCorrectOrder);
 
@@ -204,9 +205,9 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
       ...prev,
       {
         questionNumber: questionIndex + 1,
-        question: currentQ.question || 'Proof Reorder Lab',
+        question: currentQ.questionText || currentQ.question || 'Proof Reorder Lab',
         userAnswer: dragDropOrder.join(' ➔ '),
-        correctAnswer: currentQ.correctOrder ? currentQ.correctOrder.join(' ➔ ') : 'N/A',
+        correctAnswer: (currentQ.sequenceJson?.correctOrder || currentQ.correctOrder) ? (currentQ.sequenceJson?.correctOrder || currentQ.correctOrder).join(' ➔ ') : 'N/A',
         isCorrect: isCorrectOrder,
         marks: isCorrectOrder ? 150 : 0,
         explanation: 'Proof steps sequence order verification'
@@ -342,7 +343,7 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
               <Zap className="w-4 h-4 text-amber-400" /> QUESTION PROMPT
             </span>
             <h3 className="text-xl sm:text-2xl font-heading font-black text-white leading-relaxed">
-              {currentQ.question}
+              {currentQ.questionText || currentQ.question}
             </h3>
           </div>
 
@@ -425,13 +426,13 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
               NUMBER SEQUENCE PUZZLE LAB
             </span>
             <h3 className="text-xl sm:text-2xl font-heading font-black text-slate-900 dark:text-white pt-2">
-              {currentQ.question}
+              {currentQ.questionText || currentQ.question}
             </h3>
           </div>
 
           {/* Sequence Display Tiles */}
           <div className="flex flex-wrap items-center justify-center gap-4 py-8 bg-slate-900 rounded-3xl text-white border border-white/10 shadow-2xl">
-            {currentQ.sequence.map((num, idx) => (
+            {(currentQ.sequenceJson?.sequence || currentQ.sequence || []).map((num, idx) => (
               <div
                 key={idx}
                 className={`w-18 h-18 sm:w-22 sm:h-22 rounded-2xl text-3xl font-heading font-black flex items-center justify-center shadow-xl ${
@@ -447,9 +448,9 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
 
           {/* Choice Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 font-heading">
-            {currentQ.options.map((optText) => {
+            {(currentQ.sequenceJson?.options || currentQ.options || []).map((optText) => {
               const isSelected = selectedOption === optText;
-              const isRight = optText === currentQ.answer;
+              const isRight = optText === (currentQ.sequenceJson?.answer || currentQ.answer);
 
               let style = 'bg-white dark:bg-white/5 border border-indigo-200 dark:border-white/15 hover:border-indigo-600 dark:hover:border-cyan-400 text-slate-900 dark:text-white';
               if (isAnswered) {
@@ -483,7 +484,7 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
 
           {showHint && (
             <div className="bg-amber-500/10 border border-amber-400/40 p-4 rounded-xl text-xs text-amber-800 dark:text-amber-300 font-semibold font-body">
-              💡 {currentQ.hint}
+              💡 {currentQ.sequenceJson?.hint || currentQ.hint}
             </div>
           )}
 
@@ -508,7 +509,7 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
               INTERACTIVE PROOF REORDER
             </span>
             <h3 className="text-xl font-heading font-black text-white">
-              {currentQ.question}
+              {currentQ.questionText || currentQ.question}
             </h3>
             <p className="text-sm font-bold text-cyan-200 mt-1 font-body">
               {currentQ.problemStatement}

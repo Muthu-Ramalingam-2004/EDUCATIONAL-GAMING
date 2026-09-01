@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './index.css';
 import { initialUserData } from './data/mockUser';
+import { classWorldsData } from './data/mockWorlds';
 
 // Services
 import { authService } from './services/authService';
@@ -411,8 +412,10 @@ export default function App() {
             <GameplayScreen
               mode={activeMode}
               classStandard={user.activeClass}
-              chapterId={selectedWorld ? selectedWorld.id : null}
-              topicId={selectedWorld ? selectedWorld.topicId : null}
+              chapterId={selectedWorld ? selectedWorld.id : user.currentWorldId}
+              topicId={selectedWorld ? selectedWorld.topicId : (
+                [...(classWorldsData[9] || []), ...(classWorldsData[10] || [])].find(w => w.id === user.currentWorldId)?.topicId || 'number_systems'
+              )}
               levelInfo={selectedWorld ? { title: selectedWorld.title, levelNumber: selectedLevel } : { title: 'Level', levelNumber: selectedLevel }}
               onCompleteGame={async (results) => {
                 setGameResult({
