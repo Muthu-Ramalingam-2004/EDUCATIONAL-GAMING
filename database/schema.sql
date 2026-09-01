@@ -74,8 +74,10 @@ CREATE TABLE IF NOT EXISTS topics (
 -- 8. Questions table
 CREATE TABLE IF NOT EXISTS questions (
     id VARCHAR(100) PRIMARY KEY,
+    chapter_id VARCHAR(100) REFERENCES chapters(id) ON DELETE CASCADE,
     topic_id VARCHAR(100) REFERENCES topics(id) ON DELETE SET NULL,
     class_standard INT NOT NULL,
+    level_number INT DEFAULT 1,
     question_type VARCHAR(50) NOT NULL DEFAULT 'quiz' CHECK (question_type IN ('quiz', 'puzzle', 'dragdrop')),
     question_text TEXT NOT NULL,
     problem_statement TEXT,

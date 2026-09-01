@@ -5,7 +5,7 @@ import { sampleGameQuestions } from '../data/mockWorlds';
 import { gameService } from '../services/gameService';
 import { sound } from '../utils/sound';
 
-export default function GameplayScreen({ mode = 'quiz', levelInfo, onCompleteGame }) {
+export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard, topicId, onCompleteGame }) {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [coinsEarned, setCoinsEarned] = useState(0);
@@ -13,15 +13,43 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, onCompleteGam
   const [correctCount, setCorrectCount] = useState(0);
   const [timer, setTimer] = useState(30);
   const [userAnswers, setUserAnswers] = useState([]);
+  const [questionsList, setQuestionsList] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function initSession() {
+      setIsLoading(true);
       try {
-        await gameService.startGame(mode);
-      } catch (err) {}
+        await gameService.startGame(mode, {
+          classStandard,
+          chapterId: topicId,
+          topicId,
+          level: levelInfo?.levelNumber || 1
+        });
+        
+        const response = await gameService.getQuestions({
+          classStandard,
+          chapterId: topicId,
+          topicId,
+          level: levelInfo?.levelNumber || 1,
+          mode
+        });
+
+        if (response && response.success && response.questions && response.questions.length > 0) {
+          setQuestionsList(response.questions);
+        } else {
+          const fallback = mode === 'puzzle' ? sampleGameQuestions.puzzle : mode === 'dragdrop' ? sampleGameQuestions.dragDrop : sampleGameQuestions.quiz;
+          setQuestionsList(fallback);
+        }
+      } catch (err) {
+        const fallback = mode === 'puzzle' ? sampleGameQuestions.puzzle : mode === 'dragdrop' ? sampleGameQuestions.dragDrop : sampleGameQuestions.quiz;
+        setQuestionsList(fallback);
+      } finally {
+        setIsLoading(false);
+      }
     }
     initSession();
-  }, [mode]);
+  }, [mode, classStandard, topicId, levelInfo?.levelNumber]);
 
   // MCQ state
   const [selectedOption, setSelectedOption] = useState(null);
@@ -35,18 +63,11 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, onCompleteGam
   const [dragDropVerified, setDragDropVerified] = useState(false);
   const [dragDropIsCorrect, setDragDropIsCorrect] = useState(false);
 
-  // Get active question set
-  const questionsList = mode === 'puzzle' 
-    ? sampleGameQuestions.puzzle 
-    : mode === 'dragdrop' 
-    ? sampleGameQuestions.dragDrop 
-    : sampleGameQuestions.quiz;
-
-  const currentQ = questionsList[questionIndex] || questionsList[0];
+  const currentQ = questionsList.length > 0 ? (questionsList[questionIndex] || questionsList[0]) : null;
 
   // Initialize Drag and drop steps if dragdrop mode
   useEffect(() => {
-    if (mode === 'dragdrop' && currentQ.initialShuffled) {
+    if (mode === 'dragdrop' && currentQ && currentQ.initialShuffled) {
       setDragDropOrder([...currentQ.initialShuffled]);
       setDragDropVerified(false);
     }
@@ -233,6 +254,17 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, onCompleteGam
       });
     }
   };
+
+  if (isLoading || !questionsList || questionsList.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6 pb-12 flex flex-col items-center justify-center min-h-[50vh]">
+        <div className="w-16 h-16 bg-gradient-to-tr from-cyan-500 to-indigo-600 rounded-full flex items-center justify-center animate-spin shadow-xl">
+          <Zap className="w-8 h-8 text-white" />
+        </div>
+        <p className="text-white font-heading font-black text-xl mt-4">Loading Challenge...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">

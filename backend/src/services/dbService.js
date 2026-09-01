@@ -580,8 +580,10 @@ class PersistentDataStore {
         // 3. Insert Question
         const questionPayload = {
           id: q.id,
+          chapter_id: chapId,
           topic_id: topicId,
           class_standard: classStandard,
+          level_number: Number(q.levelNumber) || 1,
           question_type: q.questionType || 'quiz',
           question_text: q.questionText,
           problem_statement: q.problemStatement || null,
@@ -660,8 +662,10 @@ class PersistentDataStore {
 
       const formattedQuestions = (qData || []).map(q => ({
         id: q.id,
-        classStandard: Number(q.class_standard),
+        chapterId: q.chapter_id,
         topicId: q.topic_id,
+        classStandard: Number(q.class_standard),
+        levelNumber: Number(q.level_number) || 1,
         questionType: q.question_type,
         questionText: q.question_text,
         problemStatement: q.problem_statement,
@@ -681,6 +685,51 @@ class PersistentDataStore {
     } catch (err) {
       console.error('❌ [DB] Failed to load questions from database:', err.message);
     }
+  }
+
+  // ─── GET QUESTIONS FILTERED BY TOPIC, LEVEL & MODE ────────────────────────
+  getQuestionsFiltered({ classStandard, chapterId, topicId, levelNumber, questionType }) {
+    let filtered = [...this.questions];
+
+    if (classStandard) {
+      filtered = filtered.filter(q => Number(q.classStandard) === Number(classStandard));
+    }
+    if (chapterId) {
+      filtered = filtered.filter(q => q.chapterId === chapterId);
+    }
+    if (topicId) {
+      filtered = filtered.filter(q => q.topicId === topicId);
+    }
+    if (levelNumber) {
+      filtered = filtered.filter(q => Number(q.levelNumber) === Number(levelNumber));
+    }
+    if (questionType) {
+      filtered = filtered.filter(q => q.questionType === questionType);
+    }
+
+    // Fallback if no specific questionType match for that level, relax questionType
+    if (filtered.length === 0 && levelNumber && (chapterId || topicId)) {
+      filtered = this.questions.filter(q =>
+        (!classStandard || Number(q.classStandard) === Number(classStandard)) &&
+        ((chapterId && q.chapterId === chapterId) || (topicId && q.topicId === topicId)) &&
+        Number(q.levelNumber) === Number(levelNumber)
+      );
+    }
+
+    // Fallback if no specific level match for that topic, relax levelNumber
+    if (filtered.length === 0 && (chapterId || topicId)) {
+      filtered = this.questions.filter(q =>
+        (!classStandard || Number(q.classStandard) === Number(classStandard)) &&
+        ((chapterId && q.chapterId === chapterId) || (topicId && q.topicId === topicId))
+      );
+    }
+
+    // Ultimate fallback if no questions found at all
+    if (filtered.length === 0) {
+      filtered = this.questions.filter(q => !questionType || q.questionType === questionType);
+    }
+
+    return filtered;
   }
 
   // ─── CREATE QUESTION (ADMIN API) ──────────────────────────────────────────

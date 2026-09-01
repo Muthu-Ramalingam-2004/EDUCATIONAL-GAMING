@@ -20,12 +20,47 @@ export function getGameById(req, res) {
   });
 }
 
+export function getQuestions(req, res) {
+  const { classStandard, chapterId, topicId, level, mode } = req.query;
+  const questionType = (mode === 'puzzle' || mode === 'memory') 
+    ? 'puzzle' 
+    : (mode === 'dragdrop' || mode === 'numberquest') 
+    ? 'dragdrop' 
+    : 'quiz';
+
+  const questions = dbService.getQuestionsFiltered({
+    classStandard: classStandard ? Number(classStandard) : null,
+    chapterId: chapterId || null,
+    topicId: topicId || null,
+    levelNumber: level ? Number(level) : null,
+    questionType
+  });
+
+  res.json({
+    success: true,
+    count: questions.length,
+    questions
+  });
+}
+
 export function startGame(req, res) {
   const { gameId } = req.params;
-  const questions = dbService.questions.filter(q =>
-    q.questionType === (gameId === 'puzzle' ? 'puzzle' : gameId === 'dragdrop' ? 'dragdrop' : 'quiz')
-  );
-  const activeQuestions = questions.length > 0 ? questions : dbService.questions;
+  const { classStandard, chapterId, topicId, level, mode } = req.query;
+  const targetMode = mode || gameId;
+  const questionType = (targetMode === 'puzzle' || targetMode === 'memory') 
+    ? 'puzzle' 
+    : (targetMode === 'dragdrop' || targetMode === 'numberquest') 
+    ? 'dragdrop' 
+    : 'quiz';
+
+  const activeQuestions = dbService.getQuestionsFiltered({
+    classStandard: classStandard ? Number(classStandard) : null,
+    chapterId: chapterId || null,
+    topicId: topicId || null,
+    levelNumber: level ? Number(level) : null,
+    questionType
+  });
+
   res.json({
     success: true,
     sessionId: `sess_${Date.now()}`,

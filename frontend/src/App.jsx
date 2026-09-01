@@ -50,6 +50,7 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState('home');
   const [activeMode, setActiveMode] = useState('quiz');
   const [selectedWorld, setSelectedWorld] = useState(null);
+  const [selectedLevel, setSelectedLevel] = useState(1);
   const [gameResult, setGameResult] = useState(null);
 
   // Modals state
@@ -351,7 +352,7 @@ export default function App() {
             <GameHomeDashboard
               user={user}
               onContinueGame={() => {
-                setSelectedWorld(null);
+                setSelectedLevel(user.level || 1);
                 navigateTo('map');
               }}
               onStartMode={(modeId) => {
@@ -359,6 +360,7 @@ export default function App() {
                   navigateTo('modes');
                 } else {
                   setActiveMode(modeId);
+                  setSelectedLevel(user.level || 1);
                   navigateTo('gameplay');
                 }
               }}
@@ -386,6 +388,7 @@ export default function App() {
               world={selectedWorld}
               onStartLevel={(lvl) => {
                 setActiveMode('quiz');
+                setSelectedLevel(lvl.id || 1);
                 navigateTo('gameplay');
               }}
               onBack={() => navigateTo('worlds')}
@@ -407,7 +410,9 @@ export default function App() {
           {currentScreen === 'gameplay' && (
             <GameplayScreen
               mode={activeMode}
-              levelInfo={selectedWorld ? { title: selectedWorld.title } : null}
+              classStandard={user.activeClass}
+              topicId={selectedWorld ? selectedWorld.id : null}
+              levelInfo={selectedWorld ? { title: selectedWorld.title, levelNumber: selectedLevel } : { title: 'Level', levelNumber: selectedLevel }}
               onCompleteGame={async (results) => {
                 setGameResult({
                   ...results,
@@ -445,6 +450,7 @@ export default function App() {
                 addRewards(rewardData.xp, rewardData.coins, rewardData.badge);
               }}
               onPlayNext={() => {
+                setSelectedLevel(prev => prev + 1);
                 navigateTo('gameplay');
               }}
               onHome={() => {
