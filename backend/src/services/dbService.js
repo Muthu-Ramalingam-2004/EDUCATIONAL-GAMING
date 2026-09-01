@@ -700,26 +700,38 @@ class PersistentDataStore {
     if (subjectId) {
       filtered = filtered.filter(q => (q.subjectId || 'maths').toLowerCase() === subjectId.toLowerCase());
     }
-    if (chapterId) {
-      filtered = filtered.filter(q => q.chapterId === chapterId);
-    }
     if (topicId) {
-      filtered = filtered.filter(q => q.topicId === topicId);
+      const matchTopic = filtered.filter(q => q.topicId === topicId);
+      if (matchTopic.length > 0) filtered = matchTopic;
+    } else if (chapterId) {
+      const matchChap = filtered.filter(q => q.chapterId === chapterId);
+      if (matchChap.length > 0) filtered = matchChap;
     }
     if (levelNumber) {
-      filtered = filtered.filter(q => Number(q.levelNumber) === Number(levelNumber));
+      const matchLvl = filtered.filter(q => Number(q.levelNumber) === Number(levelNumber));
+      if (matchLvl.length > 0) filtered = matchLvl;
     }
     if (questionType && questionType !== 'all') {
-      filtered = filtered.filter(q => q.questionType === questionType);
+      const matchType = filtered.filter(q => q.questionType === questionType);
+      if (matchType.length > 0) filtered = matchType;
     }
 
-    // If exact level filter produced 0 questions, relax level filter ONLY within the exact same Grade + Subject + Topic!
-    if (filtered.length === 0 && levelNumber) {
+    // Fallback 1: Relax topic/level filter within exact same Grade + Subject
+    if (filtered.length === 0 && classStandard && subjectId) {
       filtered = this.questions.filter(q => 
-        (!classStandard || Number(q.classStandard) === Number(classStandard)) &&
-        (!subjectId || (q.subjectId || 'maths').toLowerCase() === subjectId.toLowerCase()) &&
-        (!topicId || q.topicId === topicId)
+        Number(q.classStandard) === Number(classStandard) &&
+        (q.subjectId || 'maths').toLowerCase() === subjectId.toLowerCase()
       );
+    }
+
+    // Fallback 2: Relax subject filter within exact same Grade
+    if (filtered.length === 0 && classStandard) {
+      filtered = this.questions.filter(q => Number(q.classStandard) === Number(classStandard));
+    }
+
+    // Final safety fallback
+    if (filtered.length === 0) {
+      filtered = [...this.questions];
     }
 
     return filtered.slice(0, 5);

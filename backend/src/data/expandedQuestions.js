@@ -459,5 +459,151 @@ export const expandedQuestionsData = [
     difficulty: "Easy",
     xpReward: 70,
     coinsReward: 30
+  },
+
+  // ─── PUZZLE & DRAGDROP QUESTIONS FOR GRADES 4 - 12 ──────────────────────────
+  {
+    id: "g4_p_l1_1",
+    classStandard: 4,
+    subjectId: "maths",
+    chapterId: "g4_maths_w1",
+    chapterName: "Large Numbers",
+    topicId: "g4_maths_numbers",
+    topicName: "Large Numbers & Place Value",
+    levelNumber: 1,
+    questionType: "puzzle",
+    questionText: "Find the missing number in the skip counting sequence: 5, 10, ?, 20, 25",
+    sequenceJson: {
+      sequence: ["5", "10", "?", "20", "25"],
+      options: ["12", "15", "16", "18"],
+      answer: "15",
+      hint: "Count up by 5s."
+    },
+    options: [
+      { id: "A", text: "12" },
+      { id: "B", text: "15", isCorrect: true },
+      { id: "C", text: "16" },
+      { id: "D", text: "18" }
+    ],
+    explanation: "The numbers increase by 5 at each step: 10 + 5 = 15.",
+    difficulty: "Easy",
+    xpReward: 60,
+    coinsReward: 25
+  },
+  {
+    id: "g4_dd_l1_1",
+    classStandard: 4,
+    subjectId: "maths",
+    chapterId: "g4_maths_w1",
+    chapterName: "Addition & Subtraction",
+    topicId: "g4_maths_numbers",
+    topicName: "Large Numbers & Place Value",
+    levelNumber: 1,
+    questionType: "dragdrop",
+    questionText: "Arrange the steps in order to calculate 250 + 130:",
+    problemStatement: "Order the solution steps from start to final sum:",
+    sequenceJson: {
+      initialShuffled: [
+        "Step 3: Add hundred digits (200 + 100 = 300)",
+        "Step 1: Write numbers vertically by place value",
+        "Step 4: Combine total sum to get 380",
+        "Step 2: Add tens digits (50 + 30 = 80)"
+      ]
+    },
+    options: [
+      { id: "A", text: "Step 1: Write numbers vertically by place value" },
+      { id: "B", text: "Step 2: Add tens digits (50 + 30 = 80)" },
+      { id: "C", text: "Step 3: Add hundred digits (200 + 100 = 300)" },
+      { id: "D", text: "Step 4: Combine total sum to get 380" }
+    ],
+    explanation: "Standard addition proceeds from rightmost place values (ones/tens) to hundreds.",
+    difficulty: "Easy",
+    xpReward: 70,
+    coinsReward: 30
+  },
+  {
+    id: "g8_p_l1_1",
+    classStandard: 8,
+    subjectId: "science",
+    chapterId: "g8_sci_w1",
+    chapterName: "Microorganisms",
+    topicId: "g8_sci_micro",
+    topicName: "Microorganisms: Friend & Foe",
+    levelNumber: 1,
+    questionType: "puzzle",
+    questionText: "Complete the food preservation process sequence: Fresh Milk -> Pasteurisation -> Cooling -> ?",
+    sequenceJson: {
+      sequence: ["Milk", "Heat 70°C", "Cool", "?"],
+      options: ["Sterile Pack", "Boiling", "Evaporation", "Freezing"],
+      answer: "Sterile Pack",
+      hint: "Pasteurisation ends with packaging."
+    },
+    options: [
+      { id: "A", text: "Sterile Pack", isCorrect: true },
+      { id: "B", text: "Boiling" },
+      { id: "C", text: "Evaporation" },
+      { id: "D", text: "Freezing" }
+    ],
+    explanation: "After rapid heating and cooling, pasteurised milk is packed in sterile containers.",
+    difficulty: "Medium",
+    xpReward: 75,
+    coinsReward: 35
+  },
+  {
+    id: "g10_p_l1_1",
+    classStandard: 10,
+    subjectId: "science",
+    chapterId: "class10_world1",
+    chapterName: "Chemical Reactions",
+    topicId: "real_numbers_10",
+    topicName: "Chemical Reactions & Equations",
+    levelNumber: 1,
+    questionType: "puzzle",
+    questionText: "Complete the reactivity series sequence: K > Na > Ca > Mg > ?",
+    sequenceJson: {
+      sequence: ["Potassium", "Sodium", "Calcium", "Magnesium", "?"],
+      options: ["Aluminium", "Gold", "Copper", "Platinum"],
+      answer: "Aluminium",
+      hint: "Aluminium follows Magnesium in reactivity."
+    },
+    options: [
+      { id: "A", text: "Aluminium", isCorrect: true },
+      { id: "B", text: "Gold" },
+      { id: "C", text: "Copper" },
+      { id: "D", text: "Platinum" }
+    ],
+    explanation: "Aluminium follows magnesium in the activity series of metals.",
+    difficulty: "Medium",
+    xpReward: 80,
+    coinsReward: 35
+  },
+  {
+    id: "g11_p_l1_1",
+    classStandard: 11,
+    subjectId: "cs",
+    chapterId: "g11_cs_w1",
+    chapterName: "Python Programming",
+    topicId: "g11_cs_python",
+    topicName: "Python Basics",
+    levelNumber: 1,
+    questionType: "puzzle",
+    questionText: "Complete the binary counting sequence: 000, 001, 010, 011, ?",
+    sequenceJson: {
+      sequence: ["000", "001", "010", "011", "?"],
+      options: ["100", "101", "110", "111"],
+      answer: "100",
+      hint: "Decimal 4 in binary."
+    },
+    options: [
+      { id: "A", text: "100", isCorrect: true },
+      { id: "B", text: "101" },
+      { id: "C", text: "110" },
+      { id: "D", text: "111" }
+    ],
+    explanation: "000 (0), 001 (1), 010 (2), 011 (3), 100 (4).",
+    difficulty: "Medium",
+    xpReward: 85,
+    coinsReward: 40
   }
 ];
+

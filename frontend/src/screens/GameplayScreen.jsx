@@ -329,9 +329,9 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
       </motion.div>
 
       {/* ================================================== */}
-      {/* 1. QUIZ MCQ MODE */}
+      {/* 1. QUIZ / TIME ATTACK / FORMULA MCQ MODES */}
       {/* ================================================== */}
-      {mode === 'quiz' && (
+      {(mode === 'quiz' || mode === 'timeattack' || mode === 'formula') && (
         <motion.div 
           key={questionIndex}
           initial={{ opacity: 0, x: 20 }}
@@ -342,7 +342,9 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
           {/* Question Text Card */}
           <div className="bg-slate-900 dark:bg-slate-900/90 text-white border border-indigo-500/30 dark:border-cyan-400/30 p-6 rounded-2xl shadow-xl">
             <span className="text-xs font-heading font-black text-cyan-400 uppercase tracking-widest block mb-1.5 flex items-center gap-1">
-              <Zap className="w-4 h-4 text-amber-400" /> QUESTION {questionIndex + 1} OF {questionsList.length}
+              <Zap className="w-4 h-4 text-amber-400" /> {
+                mode === 'timeattack' ? '⏱️ TIME ATTACK SPEEDWAY' : mode === 'formula' ? '🏆 FORMULA MATCH VAULT' : '⚡ QUICK QUIZ ARENA'
+              } — QUESTION {questionIndex + 1} OF {questionsList.length}
             </span>
             <h3 className="text-xl sm:text-2xl font-heading font-black text-white leading-relaxed">
               {currentQ.questionText || currentQ.question}
@@ -351,7 +353,7 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
 
           {/* 4 Large Interactive Answer Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-heading">
-            {currentQ.options.map((opt) => {
+            {(currentQ.options || []).map((opt) => {
               const isSelected = selectedOption === opt.id;
               const isRight = opt.isCorrect;
 
@@ -409,7 +411,7 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
                 <Sparkles className="w-4 h-4 text-amber-400" /> STEP-BY-STEP SOLUTION EXPLANATION
               </div>
               <p className="text-sm text-slate-200 font-medium leading-relaxed font-body">
-                {currentQ.explanation}
+                {currentQ.explanation || 'Select the correct option based on fundamental principles.'}
               </p>
             </motion.div>
           )}
@@ -418,14 +420,14 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
       )}
 
       {/* ================================================== */}
-      {/* 2. PUZZLE GAME MODE */}
+      {/* 2. PUZZLE / MEMORY GAME MODES */}
       {/* ================================================== */}
-      {mode === 'puzzle' && (
+      {(mode === 'puzzle' || mode === 'memory') && (
         <div className="glass-card p-6 sm:p-8 space-y-6 rounded-3xl border border-indigo-200/50 dark:border-white/15">
           
           <div className="text-center space-y-2">
             <span className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-heading font-black px-4 py-1.5 rounded-full uppercase tracking-wider">
-              NUMBER SEQUENCE PUZZLE LAB
+              {mode === 'memory' ? '🧠 MEMORY MATCH MATRIX' : '🧩 CONCEPT PUZZLE LAB'}
             </span>
             <h3 className="text-xl sm:text-2xl font-heading font-black text-slate-900 dark:text-white pt-2">
               {currentQ.questionText || currentQ.question}
@@ -434,10 +436,12 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
 
           {/* Sequence Display Tiles */}
           <div className="flex flex-wrap items-center justify-center gap-4 py-8 bg-slate-900 rounded-3xl text-white border border-white/10 shadow-2xl">
-            {(currentQ.sequenceJson?.sequence || currentQ.sequence || []).map((num, idx) => (
+            {(currentQ.sequenceJson?.sequence || currentQ.sequence || (
+              currentQ.options ? [currentQ.options[0]?.text, currentQ.options[1]?.text, '?', currentQ.options[3]?.text] : ['2', '4', '?', '8']
+            )).map((num, idx) => (
               <div
                 key={idx}
-                className={`w-18 h-18 sm:w-22 sm:h-22 rounded-2xl text-3xl font-heading font-black flex items-center justify-center shadow-xl ${
+                className={`w-18 h-18 sm:w-22 sm:h-22 rounded-2xl text-2xl sm:text-3xl font-heading font-black flex items-center justify-center shadow-xl p-2 text-center ${
                   num === '?' 
                     ? 'bg-amber-400 text-slate-950 border-4 border-white animate-pulse shadow-amber-400/50' 
                     : 'bg-white/10 backdrop-blur-md border border-white/20'
@@ -449,10 +453,11 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
           </div>
 
           {/* Choice Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 font-heading">
-            {(currentQ.sequenceJson?.options || currentQ.options || []).map((optText) => {
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-heading">
+            {(currentQ.sequenceJson?.options || (currentQ.options ? currentQ.options.map(o => o.text) : ['Option A', 'Option B', 'Option C', 'Option D'])).map((optText) => {
               const isSelected = selectedOption === optText;
-              const isRight = optText === (currentQ.sequenceJson?.answer || currentQ.answer);
+              const rightAns = currentQ.sequenceJson?.answer || currentQ.answer || (currentQ.options?.find(o => o.isCorrect)?.text || optText);
+              const isRight = optText === rightAns;
 
               let style = 'bg-white dark:bg-white/5 border border-indigo-200 dark:border-white/15 hover:border-indigo-600 dark:hover:border-cyan-400 text-slate-900 dark:text-white';
               if (isAnswered) {
@@ -466,7 +471,7 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
                   key={optText}
                   disabled={isAnswered}
                   onClick={() => handlePuzzleOptionClick(optText)}
-                  className={`py-4 rounded-2xl text-2xl font-heading font-black shadow-md transition-all cursor-pointer ${style}`}
+                  className={`py-4 px-3 rounded-2xl text-lg sm:text-xl font-heading font-black shadow-md transition-all cursor-pointer ${style}`}
                 >
                   {optText}
                 </button>
@@ -486,14 +491,14 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
 
           {showHint && (
             <div className="bg-amber-500/10 border border-amber-400/40 p-4 rounded-xl text-xs text-amber-800 dark:text-amber-300 font-semibold font-body">
-              💡 {currentQ.sequenceJson?.hint || currentQ.hint}
+              💡 {currentQ.sequenceJson?.hint || currentQ.hint || currentQ.explanation || 'Analyze the concept patterns to solve.'}
             </div>
           )}
 
           {isAnswered && (
             <div className="bg-slate-900 text-white p-5 rounded-2xl space-y-1.5 border border-white/10">
               <span className="text-amber-400 font-heading font-black text-xs block">EXPLANATION</span>
-              <p className="text-sm font-medium text-slate-200">{currentQ.explanation}</p>
+              <p className="text-sm font-medium text-slate-200">{currentQ.explanation || 'Solution step validated successfully.'}</p>
             </div>
           )}
 
@@ -513,14 +518,16 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
             <h3 className="text-xl font-heading font-black text-white">
               {currentQ.questionText || currentQ.question}
             </h3>
-            <p className="text-sm font-bold text-cyan-200 mt-1 font-body">
-              {currentQ.problemStatement}
-            </p>
+            {currentQ.problemStatement && (
+              <p className="text-sm font-bold text-cyan-200 mt-1 font-body">
+                {currentQ.problemStatement}
+              </p>
+            )}
           </div>
 
           {/* Reorderable Steps List */}
           <div className="space-y-3 font-heading">
-            {dragDropOrder.map((stepText, idx) => (
+            {(dragDropOrder.length > 0 ? dragDropOrder : (currentQ.options ? currentQ.options.map(o => o.text) : ['Step 1', 'Step 2', 'Step 3', 'Step 4'])).map((stepText, idx) => (
               <div
                 key={idx}
                 className="flex items-center justify-between p-4 bg-white dark:bg-white/5 border border-indigo-200 dark:border-white/15 rounded-2xl shadow-md hover:border-indigo-600 dark:hover:border-cyan-400 transition-all"
@@ -542,7 +549,7 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
                       <MoveUp className="w-5 h-5 text-indigo-600 dark:text-cyan-400" />
                     </button>
                     <button
-                      disabled={idx === dragDropOrder.length - 1}
+                      disabled={idx === (dragDropOrder.length || 4) - 1}
                       onClick={() => moveStep(idx, 'down')}
                       className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg disabled:opacity-30 cursor-pointer"
                     >

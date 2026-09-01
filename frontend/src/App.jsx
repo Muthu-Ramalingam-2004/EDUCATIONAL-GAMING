@@ -414,8 +414,21 @@ export default function App() {
           {currentScreen === 'modes' && (
             <GameModeScreen
               playerLevel={user.level}
-              onSelectMode={(modeId) => {
+              currentGrade={selectedGrade || user.activeClass || 9}
+              currentSubject={selectedSubject || 'maths'}
+              currentTopic={selectedWorld ? selectedWorld.topicId : null}
+              onSelectMode={(modeId, ctx) => {
                 setActiveMode(modeId);
+                if (ctx) {
+                  if (ctx.classStandard) setSelectedGrade(ctx.classStandard);
+                  if (ctx.subjectId) setSelectedSubject(ctx.subjectId);
+                  if (ctx.chapterId) {
+                    const chs = getChaptersForGradeAndSubject(ctx.classStandard || selectedGrade, ctx.subjectId || selectedSubject);
+                    const matched = chs.find(c => c.id === ctx.chapterId || c.topicId === ctx.topicId) || chs[0];
+                    if (matched) setSelectedWorld(matched);
+                  }
+                }
+                setSelectedLevel(1);
                 navigateTo('gameplay');
               }}
             />
