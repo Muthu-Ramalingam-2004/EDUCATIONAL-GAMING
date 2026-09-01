@@ -1,4 +1,6 @@
-export const initialQuestionsData = [
+import { expandedQuestionsData } from './expandedQuestions.js';
+
+const baseQuestions = [
   // =========================================================================
   // CLASS 9 MATHEMATICS QUESTIONS
   // =========================================================================
@@ -1543,6 +1545,11 @@ export const initialQuestionsData = [
     xpReward: 100,
     coinsReward: 50
   }
+];
+
+export const initialQuestionsData = [
+  ...baseQuestions.map(q => ({ subjectId: 'maths', ...q })),
+  ...expandedQuestionsData
 ];
 
 export const initialBadgesData = [

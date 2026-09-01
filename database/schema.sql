@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS students (
     name VARCHAR(255) NOT NULL,
     username VARCHAR(100) UNIQUE NOT NULL,
     avatar VARCHAR(50) DEFAULT '⚡',
-    class_standard INT NOT NULL CHECK (class_standard IN (9, 10)),
+    class_standard INT NOT NULL CHECK (class_standard BETWEEN 4 AND 12),
     level INT DEFAULT 1,
     total_xp INT DEFAULT 0,
     coins INT DEFAULT 100,
@@ -46,15 +46,17 @@ CREATE TABLE IF NOT EXISTS classes (
 
 -- 5. Subjects table
 CREATE TABLE IF NOT EXISTS subjects (
-    id SERIAL PRIMARY KEY,
-    class_id INT REFERENCES classes(id) ON DELETE CASCADE,
-    title VARCHAR(100) NOT NULL DEFAULT 'Mathematics'
+    id VARCHAR(100) PRIMARY KEY,
+    class_standard INT NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    icon VARCHAR(50) DEFAULT '📚'
 );
 
 -- 6. Chapters (Game Worlds) table
 CREATE TABLE IF NOT EXISTS chapters (
     id VARCHAR(100) PRIMARY KEY,
     class_standard INT NOT NULL,
+    subject_id VARCHAR(100) DEFAULT 'maths',
     title VARCHAR(255) NOT NULL,
     subtitle TEXT,
     icon VARCHAR(50) DEFAULT '🎮',
@@ -67,6 +69,8 @@ CREATE TABLE IF NOT EXISTS chapters (
 CREATE TABLE IF NOT EXISTS topics (
     id VARCHAR(100) PRIMARY KEY,
     chapter_id VARCHAR(100) REFERENCES chapters(id) ON DELETE CASCADE,
+    subject_id VARCHAR(100) DEFAULT 'maths',
+    class_standard INT DEFAULT 9,
     title VARCHAR(255) NOT NULL,
     description TEXT
 );
@@ -76,6 +80,7 @@ CREATE TABLE IF NOT EXISTS questions (
     id VARCHAR(100) PRIMARY KEY,
     chapter_id VARCHAR(100) REFERENCES chapters(id) ON DELETE CASCADE,
     topic_id VARCHAR(100) REFERENCES topics(id) ON DELETE SET NULL,
+    subject_id VARCHAR(100) DEFAULT 'maths',
     class_standard INT NOT NULL,
     level_number INT DEFAULT 1,
     question_type VARCHAR(50) NOT NULL DEFAULT 'quiz' CHECK (question_type IN ('quiz', 'puzzle', 'dragdrop')),

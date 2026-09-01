@@ -17,10 +17,11 @@ export const gameService = {
     }
   },
 
-  async getQuestions({ classStandard, chapterId, topicId, level, mode }) {
+  async getQuestions({ classStandard, subjectId, chapterId, topicId, level, mode }) {
     try {
       const queryParams = new URLSearchParams();
       if (classStandard) queryParams.append('classStandard', classStandard);
+      if (subjectId) queryParams.append('subjectId', subjectId);
       if (chapterId) queryParams.append('chapterId', chapterId);
       if (topicId) queryParams.append('topicId', topicId);
       if (level) queryParams.append('level', level);
@@ -37,6 +38,7 @@ export const gameService = {
     try {
       const queryParams = new URLSearchParams();
       if (params.classStandard) queryParams.append('classStandard', params.classStandard);
+      if (params.subjectId) queryParams.append('subjectId', params.subjectId);
       if (params.chapterId) queryParams.append('chapterId', params.chapterId);
       if (params.topicId) queryParams.append('topicId', params.topicId);
       if (params.level) queryParams.append('level', params.level);

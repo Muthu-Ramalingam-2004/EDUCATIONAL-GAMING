@@ -4,7 +4,7 @@ import { Clock, Coins, Sparkles, CheckCircle2, XCircle, ArrowRight, HelpCircle, 
 import { gameService } from '../services/gameService';
 import { sound } from '../utils/sound';
 
-export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard, chapterId, topicId, onCompleteGame }) {
+export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard, subjectId, chapterId, topicId, onCompleteGame }) {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [coinsEarned, setCoinsEarned] = useState(0);
@@ -21,6 +21,7 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
       try {
         await gameService.startGame(mode, {
           classStandard,
+          subjectId,
           chapterId: chapterId || topicId,
           topicId,
           level: levelInfo?.levelNumber || 1
@@ -28,6 +29,7 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
         
         const response = await gameService.getQuestions({
           classStandard,
+          subjectId,
           chapterId: chapterId || topicId,
           topicId,
           level: levelInfo?.levelNumber || 1,
@@ -48,7 +50,7 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
       }
     }
     initSession();
-  }, [mode, classStandard, topicId, levelInfo?.levelNumber]);
+  }, [mode, classStandard, subjectId, topicId, levelInfo?.levelNumber]);
 
   // MCQ state
   const [selectedOption, setSelectedOption] = useState(null);
@@ -340,7 +342,7 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
           {/* Question Text Card */}
           <div className="bg-slate-900 dark:bg-slate-900/90 text-white border border-indigo-500/30 dark:border-cyan-400/30 p-6 rounded-2xl shadow-xl">
             <span className="text-xs font-heading font-black text-cyan-400 uppercase tracking-widest block mb-1.5 flex items-center gap-1">
-              <Zap className="w-4 h-4 text-amber-400" /> QUESTION PROMPT
+              <Zap className="w-4 h-4 text-amber-400" /> QUESTION {questionIndex + 1} OF {questionsList.length}
             </span>
             <h3 className="text-xl sm:text-2xl font-heading font-black text-white leading-relaxed">
               {currentQ.questionText || currentQ.question}

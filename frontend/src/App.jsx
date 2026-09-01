@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './index.css';
 import { initialUserData } from './data/mockUser';
 import { classWorldsData } from './data/mockWorlds';
+import { getChaptersForGradeAndSubject } from './data/curriculumData';
 
 // Services
 import { authService } from './services/authService';
@@ -50,6 +51,8 @@ export default function App() {
   // Navigation state
   const [currentScreen, setCurrentScreen] = useState('home');
   const [activeMode, setActiveMode] = useState('quiz');
+  const [selectedGrade, setSelectedGrade] = useState(9);
+  const [selectedSubject, setSelectedSubject] = useState('maths');
   const [selectedWorld, setSelectedWorld] = useState(null);
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [gameResult, setGameResult] = useState(null);
@@ -353,6 +356,9 @@ export default function App() {
             <GameHomeDashboard
               user={user}
               onContinueGame={() => {
+                const chapters = getChaptersForGradeAndSubject(selectedGrade || user.activeClass || 9, selectedSubject || 'maths');
+                const activeCh = chapters[0];
+                setSelectedWorld(activeCh);
                 setSelectedLevel(user.level || 1);
                 navigateTo('map');
               }}
@@ -367,17 +373,24 @@ export default function App() {
               }}
               onSelectWorld={(world) => {
                 setSelectedWorld(world);
+                if (world.classStandard) setSelectedGrade(world.classStandard);
+                if (world.subjectId) setSelectedSubject(world.subjectId);
                 navigateTo('map');
               }}
             />
           )}
 
-          {/* 4. GAME WORLDS (Class 9 / 10 Chapters) */}
+          {/* 4. GAME WORLDS (Curriculum Explorer Grades 4-12) */}
           {currentScreen === 'worlds' && (
             <WorldSelectionScreen
-              currentClass={user.activeClass}
+              currentClass={selectedGrade || user.activeClass || 9}
+              currentSubject={selectedSubject || 'maths'}
+              onSelectGrade={(gId) => setSelectedGrade(gId)}
+              onSelectSubject={(sId) => setSelectedSubject(sId)}
               onSelectWorld={(world) => {
                 setSelectedWorld(world);
+                if (world.classStandard) setSelectedGrade(world.classStandard);
+                if (world.subjectId) setSelectedSubject(world.subjectId);
                 navigateTo('map');
               }}
             />
@@ -386,10 +399,11 @@ export default function App() {
           {/* 5. LEVEL MAP SCREEN */}
           {currentScreen === 'map' && (
             <LevelMapScreen
-              world={selectedWorld}
+              world={selectedWorld || getChaptersForGradeAndSubject(selectedGrade, selectedSubject)[0]}
               onStartLevel={(lvl) => {
                 setActiveMode('quiz');
                 setSelectedLevel(lvl.id || 1);
+                if (lvl.world) setSelectedWorld(lvl.world);
                 navigateTo('gameplay');
               }}
               onBack={() => navigateTo('worlds')}
@@ -411,37 +425,29 @@ export default function App() {
           {currentScreen === 'gameplay' && (
             <GameplayScreen
               mode={activeMode}
-              classStandard={user.activeClass}
-              chapterId={selectedWorld ? selectedWorld.id : user.currentWorldId}
-              topicId={selectedWorld ? selectedWorld.topicId : (
-                [...(classWorldsData[9] || []), ...(classWorldsData[10] || [])].find(w => w.id === user.currentWorldId)?.topicId || 'number_systems'
-              )}
-              levelInfo={selectedWorld ? { title: selectedWorld.title, levelNumber: selectedLevel } : { title: 'Level', levelNumber: selectedLevel }}
-              onCompleteGame={async (results) => {
+              classStandard={selectedGrade || user.activeClass || 9}
+              subjectId={selectedSubject || 'maths'}
+              chapterId={selectedWorld ? selectedWorld.id : (selectedGrade === 10 ? 'class10_world1' : 'class9_world1')}
+              topicId={selectedWorld ? selectedWorld.topicId : (selectedGrade === 10 ? 'real_numbers_10' : 'number_systems')}
+              levelInfo={selectedWorld ? { title: selectedWorld.title, levelNumber: selectedLevel } : { title: `Level ${selectedLevel}`, levelNumber: selectedLevel }}
+              onCompleteGame={(results) => {
                 setGameResult({
                   ...results,
                   mode: activeMode,
-                  levelTitle: selectedWorld ? selectedWorld.title : (activeMode === 'quiz' ? 'Algebra Arena Quiz' : activeMode === 'puzzle' ? 'Number Sequence Puzzle Lab' : 'Proof Reorder Lab'),
+                  levelTitle: selectedWorld ? selectedWorld.title : 'MathQuest Challenge',
                   user: {
                     name: user.name || 'Student Player',
                     username: user.username || 'student',
-                    activeClass: user.activeClass || 9
+                    activeClass: selectedGrade || user.activeClass || 9
                   }
                 });
                 navigateTo('result');
-
-                try {
-                  const submitRes = await gameService.submitGame(activeMode, {
-                    answers: [],
-                    timeTakenSeconds: 105
+                if (results.levelUp) {
+                  setLevelUpModal({
+                    oldLevel: results.previousLevel,
+                    newLevel: results.newLevel
                   });
-                  if (submitRes && submitRes.levelUp) {
-                    setLevelUpModal({
-                      oldLevel: submitRes.previousLevel,
-                      newLevel: submitRes.newLevel
-                    });
-                  }
-                } catch (err) {}
+                }
               }}
             />
           )}

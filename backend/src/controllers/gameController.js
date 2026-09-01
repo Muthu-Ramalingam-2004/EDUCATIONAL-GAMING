@@ -21,15 +21,18 @@ export function getGameById(req, res) {
 }
 
 export function getQuestions(req, res) {
-  const { classStandard, chapterId, topicId, level, mode } = req.query;
+  const { classStandard, subjectId, chapterId, topicId, level, mode } = req.query;
   const questionType = (mode === 'puzzle' || mode === 'memory') 
     ? 'puzzle' 
     : (mode === 'dragdrop' || mode === 'numberquest') 
     ? 'dragdrop' 
+    : (mode && mode !== 'quiz' && mode !== 'timeattack' && mode !== 'formula')
+    ? mode
     : 'quiz';
 
   const questions = dbService.getQuestionsFiltered({
     classStandard: classStandard ? Number(classStandard) : null,
+    subjectId: subjectId || null,
     chapterId: chapterId || null,
     topicId: topicId || null,
     levelNumber: level ? Number(level) : null,
@@ -45,16 +48,19 @@ export function getQuestions(req, res) {
 
 export function startGame(req, res) {
   const { gameId } = req.params;
-  const { classStandard, chapterId, topicId, level, mode } = req.query;
+  const { classStandard, subjectId, chapterId, topicId, level, mode } = req.query;
   const targetMode = mode || gameId;
   const questionType = (targetMode === 'puzzle' || targetMode === 'memory') 
     ? 'puzzle' 
     : (targetMode === 'dragdrop' || targetMode === 'numberquest') 
     ? 'dragdrop' 
+    : (targetMode && targetMode !== 'quiz' && targetMode !== 'timeattack' && targetMode !== 'formula')
+    ? targetMode
     : 'quiz';
 
   const activeQuestions = dbService.getQuestionsFiltered({
     classStandard: classStandard ? Number(classStandard) : null,
+    subjectId: subjectId || null,
     chapterId: chapterId || null,
     topicId: topicId || null,
     levelNumber: level ? Number(level) : null,

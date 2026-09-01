@@ -631,7 +631,7 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
                 {/* Question Filter Panel */}
                 <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-950/40 p-4 rounded-2xl border border-white/10 w-full min-w-0 box-border">
                   <div className="flex items-center gap-2 flex-wrap min-w-0 max-w-full">
-                    <span className="text-xs text-slate-400 font-bold uppercase shrink-0">Syllabus filter:</span>
+                    <span className="text-xs text-slate-400 font-bold uppercase shrink-0">Grade Standard filter:</span>
                     <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                       <button
                         onClick={() => { sound.playClick(); setQuestionClassFilter('all'); }}
@@ -641,28 +641,21 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
                             : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
                         }`}
                       >
-                        All Class Syllabus
+                        All Grades
                       </button>
-                      <button
-                        onClick={() => { sound.playClick(); setQuestionClassFilter('9'); }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
-                          questionClassFilter === '9' 
-                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-md' 
-                            : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        Class 9 Questions
-                      </button>
-                      <button
-                        onClick={() => { sound.playClick(); setQuestionClassFilter('10'); }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
-                          questionClassFilter === '10' 
-                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-md' 
-                            : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        Class 10 Questions
-                      </button>
+                      {[4, 5, 6, 7, 8, 9, 10, 11, 12].map(gNum => (
+                        <button
+                          key={gNum}
+                          onClick={() => { sound.playClick(); setQuestionClassFilter(String(gNum)); }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
+                            questionClassFilter === String(gNum) 
+                              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-md' 
+                              : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          Grade {gNum}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
@@ -1049,8 +1042,15 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
                       onChange={(e) => setNewQClass(Number(e.target.value))}
                       className="w-full px-3 py-2.5 border border-white/10 rounded-xl bg-slate-900 text-white font-bold outline-none focus:border-indigo-500"
                     >
-                      <option value="9">Class 9th</option>
-                      <option value="10">Class 10th</option>
+                      <option value="4">Class 4th Standard</option>
+                      <option value="5">Class 5th Standard</option>
+                      <option value="6">Class 6th Standard</option>
+                      <option value="7">Class 7th Standard</option>
+                      <option value="8">Class 8th Standard</option>
+                      <option value="9">Class 9th Standard</option>
+                      <option value="10">Class 10th Standard</option>
+                      <option value="11">Class 11th Standard</option>
+                      <option value="12">Class 12th Standard</option>
                     </select>
                   </div>
                   <div>

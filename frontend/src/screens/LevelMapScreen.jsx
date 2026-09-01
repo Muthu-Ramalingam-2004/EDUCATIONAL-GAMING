@@ -86,7 +86,7 @@ export default function LevelMapScreen({ world, onStartLevel, onBack }) {
                   onClick={() => {
                     if (!isLocked) {
                       sound.playClick();
-                      onStartLevel(lvl);
+                      onStartLevel({ ...lvl, world: activeWorld, topicId: activeWorld.topicId, classStandard: activeWorld.classStandard, subjectId: activeWorld.subjectId });
                     }
                   }}
                   className={`w-22 h-22 rounded-3xl font-heading font-black text-xl flex flex-col items-center justify-center border-4 shadow-2xl transition-all duration-300 transform cursor-pointer ${
@@ -156,7 +156,7 @@ export default function LevelMapScreen({ world, onStartLevel, onBack }) {
                     <button
                       onClick={() => {
                         sound.playClick();
-                        onStartLevel(lvl);
+                        onStartLevel({ ...lvl, world: activeWorld, topicId: activeWorld.topicId, classStandard: activeWorld.classStandard, subjectId: activeWorld.subjectId });
                       }}
                       className="btn-game-gold text-[11px] py-1.5 px-4 shadow-lg cursor-pointer"
                     >

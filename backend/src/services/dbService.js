@@ -365,12 +365,11 @@ class PersistentDataStore {
       if (q) {
         const correctOpt = q.options.find(o => o.isCorrect);
         if (correctOpt && correctOpt.id === ans.selectedOption) correctCount++;
+        else if (ans.isCorrect) correctCount++;
       } else {
         if (ans.isCorrect) correctCount++;
       }
     });
-
-    if (answers.length === 0) correctCount = 4;
 
     const score = correctCount * 100 + 50;
     const accuracyPct = Math.round((correctCount / totalQuestions) * 100);
@@ -505,27 +504,23 @@ class PersistentDataStore {
   }
 
   // ─── SEED QUESTIONS IF EMPTY (STARTUP CONFIG) ─────────────────────────────
+  // ─── SEED QUESTIONS IF MISSING (STARTUP CONFIG) ───────────────────────────
   async seedQuestionsIfEmpty() {
     if (!supabase) return;
     try {
-      const { count, error: countErr } = await supabase
-        .from('questions')
-        .select('*', { count: 'exact', head: true });
-
-      if (countErr) throw countErr;
-
-      if (count > 0) {
-        console.log('⚡ [DB] Database questions table already contains data. Skipping seeding.');
-        return;
-      }
-
-      console.log('🌱 [DB] Seeding database with initial questions, chapters, and topics...');
+      console.log('🌱 [DB] Checking and seeding database questions, chapters, and topics...');
       
+      const { data: existingQ } = await supabase
+        .from('questions')
+        .select('id');
+
+      const existingIds = new Set((existingQ || []).map(row => row.id));
       const insertedChapters = new Set();
       const insertedTopics = new Set();
 
       for (const q of initialQuestionsData) {
         const classStandard = Number(q.classStandard) || 9;
+        const subjectId = (q.subjectId || 'maths').toLowerCase();
         
         // 1. Ensure Chapter exists
         const chapId = q.chapterId || `class${classStandard}_world1`;
@@ -543,8 +538,9 @@ class PersistentDataStore {
               .insert([{
                 id: chapId,
                 class_standard: classStandard,
+                subject_id: subjectId,
                 title: chapTitle,
-                subtitle: 'Mathematical Challenges',
+                subtitle: 'Educational Gaming Challenges',
                 icon: '🎮',
                 color_gradient: classStandard === 10 ? 'from-green-600 to-teal-700' : 'from-blue-600 to-indigo-700',
                 total_levels: 5,
@@ -564,12 +560,14 @@ class PersistentDataStore {
             .maybeSingle();
 
           if (!existingTopic) {
-            const topicTitle = q.topicName || q.topicId || 'Number Systems';
+            const topicTitle = q.topicName || q.topicId || 'Topic Challenge';
             await supabase
               .from('topics')
               .insert([{
                 id: topicId,
                 chapter_id: chapId,
+                subject_id: subjectId,
+                class_standard: classStandard,
                 title: topicTitle,
                 description: `Learn and solve problems on ${topicTitle}`
               }]);
@@ -577,11 +575,15 @@ class PersistentDataStore {
           insertedTopics.add(topicId);
         }
 
+        // Skip question if already in DB
+        if (existingIds.has(q.id)) continue;
+
         // 3. Insert Question
         const questionPayload = {
           id: q.id,
           chapter_id: chapId,
           topic_id: topicId,
+          subject_id: subjectId,
           class_standard: classStandard,
           level_number: Number(q.levelNumber) || 1,
           question_type: q.questionType || 'quiz',
@@ -664,6 +666,7 @@ class PersistentDataStore {
         id: q.id,
         chapterId: q.chapter_id,
         topicId: q.topic_id,
+        subjectId: q.subject_id || 'maths',
         classStandard: Number(q.class_standard),
         levelNumber: Number(q.level_number) || 1,
         questionType: q.question_type,
@@ -687,12 +690,15 @@ class PersistentDataStore {
     }
   }
 
-  // ─── GET QUESTIONS FILTERED BY TOPIC, LEVEL & MODE ────────────────────────
-  getQuestionsFiltered({ classStandard, chapterId, topicId, levelNumber, questionType }) {
+  // ─── GET QUESTIONS FILTERED BY GRADE, SUBJECT, TOPIC, LEVEL & MODE ─────────
+  getQuestionsFiltered({ classStandard, subjectId, chapterId, topicId, levelNumber, questionType }) {
     let filtered = [...this.questions];
 
     if (classStandard) {
       filtered = filtered.filter(q => Number(q.classStandard) === Number(classStandard));
+    }
+    if (subjectId) {
+      filtered = filtered.filter(q => (q.subjectId || 'maths').toLowerCase() === subjectId.toLowerCase());
     }
     if (chapterId) {
       filtered = filtered.filter(q => q.chapterId === chapterId);
@@ -703,14 +709,19 @@ class PersistentDataStore {
     if (levelNumber) {
       filtered = filtered.filter(q => Number(q.levelNumber) === Number(levelNumber));
     }
-    if (questionType) {
+    if (questionType && questionType !== 'all') {
       filtered = filtered.filter(q => q.questionType === questionType);
     }
 
-    // We removed the ultimate global fallbacks here per requirements. 
-    // If filtered is empty, it should return [] rather than polluting the game with unrelated questions.
+    // If exact level filter produced 0 questions, relax level filter ONLY within the exact same Grade + Subject + Topic!
+    if (filtered.length === 0 && levelNumber) {
+      filtered = this.questions.filter(q => 
+        (!classStandard || Number(q.classStandard) === Number(classStandard)) &&
+        (!subjectId || (q.subjectId || 'maths').toLowerCase() === subjectId.toLowerCase()) &&
+        (!topicId || q.topicId === topicId)
+      );
+    }
 
-    // Limit to 5 questions per session max for gameplay
     return filtered.slice(0, 5);
   }
 

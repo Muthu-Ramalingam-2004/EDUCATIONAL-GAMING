@@ -1,28 +1,42 @@
 import { dbService } from '../services/dbService.js';
 
 export function getQuestions(req, res) {
-  const { classStandard, type } = req.query;
-  let questions = dbService.questions;
-
-  if (classStandard) {
-    questions = questions.filter(q => q.classStandard === Number(classStandard));
-  }
-
-  if (type) {
-    questions = questions.filter(q => q.questionType === type);
-  }
+  const { classStandard, subjectId, topicId, chapterId, level, type, mode } = req.query;
+  const questions = dbService.getQuestionsFiltered({
+    classStandard: classStandard ? Number(classStandard) : null,
+    subjectId: subjectId || null,
+    chapterId: chapterId || null,
+    topicId: topicId || null,
+    levelNumber: level ? Number(level) : null,
+    questionType: type || mode || null
+  });
 
   res.json({ success: true, count: questions.length, questions });
 }
 
 export function getQuestionsByTopic(req, res) {
   const { topicId } = req.params;
-  const questions = dbService.questions.filter(q => q.topicId === topicId);
+  const { classStandard, subjectId, level } = req.query;
+  const questions = dbService.getQuestionsFiltered({
+    classStandard: classStandard ? Number(classStandard) : null,
+    subjectId: subjectId || null,
+    topicId,
+    levelNumber: level ? Number(level) : null
+  });
+
   res.json({ success: true, count: questions.length, questions });
 }
 
 export function getQuestionsByLevel(req, res) {
   const { levelId } = req.params;
-  const questions = dbService.questions.slice(0, 5);
-  res.json({ success: true, levelId, questions });
+  const { classStandard, subjectId, topicId, chapterId } = req.query;
+  const questions = dbService.getQuestionsFiltered({
+    classStandard: classStandard ? Number(classStandard) : null,
+    subjectId: subjectId || null,
+    chapterId: chapterId || null,
+    topicId: topicId || null,
+    levelNumber: levelId ? Number(levelId) : 1
+  });
+
+  res.json({ success: true, levelId, count: questions.length, questions });
 }
