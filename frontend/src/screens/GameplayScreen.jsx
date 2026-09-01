@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Coins, Sparkles, CheckCircle2, XCircle, ArrowRight, HelpCircle, MoveUp, MoveDown, Trophy, Zap } from 'lucide-react';
-import { sampleGameQuestions } from '../data/mockWorlds';
 import { gameService } from '../services/gameService';
 import { sound } from '../utils/sound';
 
-export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard, topicId, onCompleteGame }) {
+export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard, chapterId, topicId, onCompleteGame }) {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [coinsEarned, setCoinsEarned] = useState(0);
@@ -22,14 +21,14 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
       try {
         await gameService.startGame(mode, {
           classStandard,
-          chapterId: topicId,
+          chapterId: chapterId || topicId,
           topicId,
           level: levelInfo?.levelNumber || 1
         });
         
         const response = await gameService.getQuestions({
           classStandard,
-          chapterId: topicId,
+          chapterId: chapterId || topicId,
           topicId,
           level: levelInfo?.levelNumber || 1,
           mode
@@ -38,12 +37,12 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
         if (response && response.success && response.questions && response.questions.length > 0) {
           setQuestionsList(response.questions);
         } else {
-          const fallback = mode === 'puzzle' ? sampleGameQuestions.puzzle : mode === 'dragdrop' ? sampleGameQuestions.dragDrop : sampleGameQuestions.quiz;
-          setQuestionsList(fallback);
+          console.error("Backend failed to return questions:", response);
+          setQuestionsList([]);
         }
       } catch (err) {
-        const fallback = mode === 'puzzle' ? sampleGameQuestions.puzzle : mode === 'dragdrop' ? sampleGameQuestions.dragDrop : sampleGameQuestions.quiz;
-        setQuestionsList(fallback);
+        console.error("Failed to fetch questions:", err);
+        setQuestionsList([]);
       } finally {
         setIsLoading(false);
       }
@@ -255,13 +254,28 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
     }
   };
 
-  if (isLoading || !questionsList || questionsList.length === 0) {
+  if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto space-y-6 pb-12 flex flex-col items-center justify-center min-h-[50vh]">
         <div className="w-16 h-16 bg-gradient-to-tr from-cyan-500 to-indigo-600 rounded-full flex items-center justify-center animate-spin shadow-xl">
           <Zap className="w-8 h-8 text-white" />
         </div>
         <p className="text-white font-heading font-black text-xl mt-4">Loading Challenge...</p>
+      </div>
+    );
+  }
+
+  if (!questionsList || questionsList.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6 pb-12 flex flex-col items-center justify-center min-h-[50vh]">
+        <div className="bg-rose-500/10 border border-rose-500/30 p-8 rounded-3xl text-center max-w-md">
+          <XCircle className="w-16 h-16 text-rose-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-heading font-black text-white mb-2">No Questions Found</h2>
+          <p className="text-slate-300 font-body mb-6">We couldn't load the questions for this level. Please check your connection or try another topic.</p>
+          <button onClick={() => window.location.reload()} className="btn-game-primary px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold">
+            Retry Connection
+          </button>
+        </div>
       </div>
     );
   }

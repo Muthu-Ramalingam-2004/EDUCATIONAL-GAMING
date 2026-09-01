@@ -411,7 +411,8 @@ export default function App() {
             <GameplayScreen
               mode={activeMode}
               classStandard={user.activeClass}
-              topicId={selectedWorld ? selectedWorld.id : null}
+              chapterId={selectedWorld ? selectedWorld.id : null}
+              topicId={selectedWorld ? selectedWorld.topicId : null}
               levelInfo={selectedWorld ? { title: selectedWorld.title, levelNumber: selectedLevel } : { title: 'Level', levelNumber: selectedLevel }}
               onCompleteGame={async (results) => {
                 setGameResult({
