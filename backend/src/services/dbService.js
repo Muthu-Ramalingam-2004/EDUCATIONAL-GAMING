@@ -716,24 +716,7 @@ class PersistentDataStore {
       if (matchType.length > 0) filtered = matchType;
     }
 
-    // Fallback 1: Relax topic/level filter within exact same Grade + Subject
-    if (filtered.length === 0 && classStandard && subjectId) {
-      filtered = this.questions.filter(q => 
-        Number(q.classStandard) === Number(classStandard) &&
-        (q.subjectId || 'maths').toLowerCase() === subjectId.toLowerCase()
-      );
-    }
-
-    // Fallback 2: Relax subject filter within exact same Grade
-    if (filtered.length === 0 && classStandard) {
-      filtered = this.questions.filter(q => Number(q.classStandard) === Number(classStandard));
-    }
-
-    // Final safety fallback
-    if (filtered.length === 0) {
-      filtered = [...this.questions];
-    }
-
+    // Strictly scoped within the requested Class + Subject
     return filtered.slice(0, 5);
   }
 

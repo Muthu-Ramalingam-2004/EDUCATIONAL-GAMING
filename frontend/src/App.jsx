@@ -435,35 +435,39 @@ export default function App() {
           )}
 
           {/* 7, 8, 9. GAMEPLAY SCREEN */}
-          {currentScreen === 'gameplay' && (
-            <GameplayScreen
-              mode={activeMode}
-              classStandard={selectedGrade || user.activeClass || 9}
-              subjectId={selectedSubject || 'maths'}
-              chapterId={selectedWorld ? selectedWorld.id : (selectedGrade === 10 ? 'class10_world1' : 'class9_world1')}
-              topicId={selectedWorld ? selectedWorld.topicId : (selectedGrade === 10 ? 'real_numbers_10' : 'number_systems')}
-              levelInfo={selectedWorld ? { title: selectedWorld.title, levelNumber: selectedLevel } : { title: `Level ${selectedLevel}`, levelNumber: selectedLevel }}
-              onCompleteGame={(results) => {
-                setGameResult({
-                  ...results,
-                  mode: activeMode,
-                  levelTitle: selectedWorld ? selectedWorld.title : 'MathQuest Challenge',
-                  user: {
-                    name: user.name || 'Student Player',
-                    username: user.username || 'student',
-                    activeClass: selectedGrade || user.activeClass || 9
-                  }
-                });
-                navigateTo('result');
-                if (results.levelUp) {
-                  setLevelUpModal({
-                    oldLevel: results.previousLevel,
-                    newLevel: results.newLevel
+          {currentScreen === 'gameplay' && (() => {
+            const activeChs = getChaptersForGradeAndSubject(selectedGrade || user.activeClass || 9, selectedSubject || 'maths');
+            const activeCh = selectedWorld || activeChs[0];
+            return (
+              <GameplayScreen
+                mode={activeMode}
+                classStandard={selectedGrade || user.activeClass || 9}
+                subjectId={selectedSubject || 'maths'}
+                chapterId={activeCh ? activeCh.id : null}
+                topicId={activeCh ? activeCh.topicId : null}
+                levelInfo={activeCh ? { title: activeCh.title, levelNumber: selectedLevel } : { title: `Level ${selectedLevel}`, levelNumber: selectedLevel }}
+                onCompleteGame={(results) => {
+                  setGameResult({
+                    ...results,
+                    mode: activeMode,
+                    levelTitle: activeCh ? activeCh.title : 'MathQuest Challenge',
+                    user: {
+                      name: user.name || 'Student Player',
+                      username: user.username || 'student',
+                      activeClass: selectedGrade || user.activeClass || 9
+                    }
                   });
-                }
-              }}
-            />
-          )}
+                  navigateTo('result');
+                  if (results.levelUp) {
+                    setLevelUpModal({
+                      oldLevel: results.previousLevel,
+                      newLevel: results.newLevel
+                    });
+                  }
+                }}
+              />
+            );
+          })()}
 
           {/* 10. GAME RESULT SCREEN */}
           {currentScreen === 'result' && (

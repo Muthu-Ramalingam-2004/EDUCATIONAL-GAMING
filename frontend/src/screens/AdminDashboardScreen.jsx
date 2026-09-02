@@ -23,8 +23,9 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
   // UI States
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [classFilter, setClassFilter] = useState('all'); // 'all' | '9' | '10'
-  const [questionClassFilter, setQuestionClassFilter] = useState('all'); // 'all' | '9' | '10'
+  const [classFilter, setClassFilter] = useState('all');
+  const [questionClassFilter, setQuestionClassFilter] = useState('all');
+  const [questionSubjectFilter, setQuestionSubjectFilter] = useState('all');
   
   // Modals & Forms State
   const [showAddQuestionModal, setShowAddQuestionModal] = useState(false);
@@ -283,9 +284,11 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
     return matchesSearch && matchesClass;
   });
 
-  // Filter questions based on standard
+  // Filter questions based on standard and subject
   const filteredQuestions = questions.filter(q => {
-    return questionClassFilter === 'all' || Number(q.classStandard) === Number(questionClassFilter);
+    const matchClass = questionClassFilter === 'all' || Number(q.classStandard) === Number(questionClassFilter);
+    const matchSubj = questionSubjectFilter === 'all' || (q.subjectId || 'maths').toLowerCase() === questionSubjectFilter.toLowerCase();
+    return matchClass && matchSubj;
   });
 
   return (
