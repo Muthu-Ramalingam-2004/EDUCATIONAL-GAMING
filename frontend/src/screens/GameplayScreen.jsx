@@ -53,7 +53,6 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
     };
     try {
       sessionStorage.setItem('educational_quest_gameplay_session', JSON.stringify(sessionObj));
-      localStorage.setItem('educational_quest_gameplay_session', JSON.stringify(sessionObj));
     } catch (_) {}
   }, [mode, classStandard, subjectId, chapterId, topicId, levelInfo?.levelNumber, questionIndex, score, coinsEarned, xpEarned, correctCount, userAnswers, isLoading, questionsList]);
 

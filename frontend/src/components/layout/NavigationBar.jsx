@@ -17,7 +17,7 @@ export default function NavigationBar({ currentScreen, onNavigate, isAdmin }) {
   const hasAdminSession = (() => {
     if (isAdmin) return true;
     try {
-      const raw = localStorage.getItem('mathquest_session');
+      const raw = sessionStorage.getItem('mathquest_admin_session');
       if (raw) {
         const parsed = JSON.parse(raw);
         return Boolean(parsed?.token && parsed?.user?.role === 'admin');

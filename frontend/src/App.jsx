@@ -67,8 +67,16 @@ export default function App() {
 
   // 1. Session Restoration on Application Load
   useEffect(() => {
+    // Clean up any legacy localStorage auth keys
     try {
-      const savedSession = localStorage.getItem('mathquest_session');
+      localStorage.removeItem('mathquest_session');
+      localStorage.removeItem('mathquest_token');
+      localStorage.removeItem('mathquest_admin_session');
+      localStorage.removeItem('mathquest_admin_token');
+    } catch (_) {}
+
+    try {
+      const savedSession = sessionStorage.getItem('mathquest_session');
       if (savedSession) {
         const parsed = JSON.parse(savedSession);
         if (parsed && parsed.token && (parsed.student || parsed.user)) {
@@ -88,7 +96,7 @@ export default function App() {
 
           // Check if active gameplay session exists for instant refresh recovery
           try {
-            const activeGameplayRaw = sessionStorage.getItem('educational_quest_gameplay_session') || localStorage.getItem('educational_quest_gameplay_session');
+            const activeGameplayRaw = sessionStorage.getItem('educational_quest_gameplay_session');
             if (activeGameplayRaw) {
               const activeSession = JSON.parse(activeGameplayRaw);
               if (activeSession && activeSession.currentScreen === 'gameplay' && (Date.now() - (activeSession.timestamp || 0) < 7200000)) {
@@ -113,6 +121,11 @@ export default function App() {
     } catch (e) {
       console.warn('Session restoration warning:', e);
     }
+
+    // No active session in sessionStorage
+    setIsAuthenticated(false);
+    setIsAdmin(false);
+    setShowSplash(true);
   }, []);
 
   // Synchronize player progress with Express Backend API
@@ -261,6 +274,31 @@ export default function App() {
     setAuthScreenInitialError('');
     setIsAuthenticated(false);
     setIsAdmin(false);
+    setShowSplash(false);
+  };
+
+  // ─── LANDING PAGE "ENTER THE ARENA" AUTH GUARD ──────────────────────────────
+  const handleEnterArena = () => {
+    try {
+      const activeSessionRaw = sessionStorage.getItem('mathquest_session');
+      if (activeSessionRaw) {
+        const parsed = JSON.parse(activeSessionRaw);
+        if (parsed && parsed.token && (parsed.student || parsed.user)) {
+          setIsAuthenticated(true);
+          setIsAdmin(false);
+          setShowSplash(false);
+          setCurrentScreen('home');
+          return;
+        }
+      }
+    } catch (_) {}
+
+    // No valid active login session -> redirect to User Login page
+    setIsAuthenticated(false);
+    setIsAdmin(false);
+    setAuthScreenInitialMode('login');
+    setAuthScreenInitialError('');
+    setShowSplash(false);
   };
 
   // ─── ROLE-GUARDED NAVIGATION ────────────────────────────────────────────────
@@ -277,9 +315,9 @@ export default function App() {
         setCurrentScreen('admin');
         return;
       }
-      // Check for stored valid admin session
+      // Check for stored valid admin session in sessionStorage
       try {
-        const adminRaw = localStorage.getItem('mathquest_admin_session');
+        const adminRaw = sessionStorage.getItem('mathquest_admin_session');
         if (adminRaw) {
           const parsedAdmin = JSON.parse(adminRaw);
           if (parsedAdmin && parsedAdmin.token && parsedAdmin.user && parsedAdmin.user.role === 'admin') {
@@ -289,8 +327,12 @@ export default function App() {
           }
         }
       } catch (_) {}
-      // No valid admin session — show the gate
-      setCurrentScreen('admin');
+      // No valid admin session — redirect to Admin Login
+      setAuthScreenInitialMode('admin');
+      setAuthScreenInitialError('');
+      setIsAuthenticated(false);
+      setIsAdmin(false);
+      setShowSplash(false);
       return;
     }
     setCurrentScreen(screen);
@@ -326,9 +368,7 @@ export default function App() {
   if (showSplash) {
     return (
       <SplashScreen
-        onStart={() => {
-          setShowSplash(false);
-        }}
+        onStart={handleEnterArena}
       />
     );
   }
@@ -492,10 +532,10 @@ export default function App() {
                     setUser(prev => {
                       const merged = { ...prev, ...results.updatedStudent };
                       try {
-                        const raw = localStorage.getItem('mathquest_session');
+                        const raw = sessionStorage.getItem('mathquest_session');
                         if (raw) {
                           const parsed = JSON.parse(raw);
-                          localStorage.setItem('mathquest_session', JSON.stringify({ ...parsed, student: merged }));
+                          sessionStorage.setItem('mathquest_session', JSON.stringify({ ...parsed, student: merged }));
                         }
                       } catch (err) {}
                       return merged;

@@ -29,15 +29,15 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     try {
-      const adminToken = localStorage.getItem('mathquest_admin_token');
-      const studentToken = localStorage.getItem('mathquest_token');
+      const adminToken = sessionStorage.getItem('mathquest_admin_token') || localStorage.getItem('mathquest_admin_token');
+      const studentToken = sessionStorage.getItem('mathquest_token') || localStorage.getItem('mathquest_token');
       const isAdminRoute = config.url && config.url.includes('/admin');
       const token = (isAdminRoute && adminToken) ? adminToken : (studentToken || adminToken);
       if (token && typeof token === 'string') {
         config.headers.Authorization = `Bearer ${token}`;
       }
     } catch (_e) {
-      // localStorage unavailable (private browsing restrictions etc.)
+      // Storage unavailable (private browsing restrictions etc.)
     }
     return config;
   },
@@ -148,11 +148,17 @@ apiClient.interceptors.response.use(
   (error) => {
     const message = extractErrorMessage(error);
 
-    // Global 401 handler: clear localStorage and notify App.jsx
+    // Global 401 handler: clear auth storage and notify App.jsx
     if (error && error.response && error.response.status === 401) {
       try {
+        sessionStorage.removeItem('mathquest_token');
+        sessionStorage.removeItem('mathquest_session');
+        sessionStorage.removeItem('mathquest_admin_token');
+        sessionStorage.removeItem('mathquest_admin_session');
         localStorage.removeItem('mathquest_token');
         localStorage.removeItem('mathquest_session');
+        localStorage.removeItem('mathquest_admin_token');
+        localStorage.removeItem('mathquest_admin_session');
         window.dispatchEvent(new CustomEvent('mathquest_unauthorized', {
           detail: { message }
         }));

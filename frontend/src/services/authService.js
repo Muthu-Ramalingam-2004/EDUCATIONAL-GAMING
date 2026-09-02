@@ -31,11 +31,16 @@ export const authService = {
       const res = await apiClient.post('/auth/register', registerData);
       // res is already response.data (unwrapped by interceptor)
       if (res && res.token && typeof res.token === 'string') {
-        localStorage.setItem('mathquest_token', res.token);
-        localStorage.setItem(
+        sessionStorage.setItem('mathquest_token', res.token);
+        sessionStorage.setItem(
           'mathquest_session',
           JSON.stringify({ token: res.token, user: res.user, student: res.student })
         );
+        // Purge legacy persistent keys
+        try {
+          localStorage.removeItem('mathquest_token');
+          localStorage.removeItem('mathquest_session');
+        } catch (_) {}
       }
       return res;
     } catch (err) {
@@ -48,11 +53,16 @@ export const authService = {
     try {
       const res = await apiClient.post('/auth/login', credentials);
       if (res && res.token && typeof res.token === 'string') {
-        localStorage.setItem('mathquest_token', res.token);
-        localStorage.setItem(
+        sessionStorage.setItem('mathquest_token', res.token);
+        sessionStorage.setItem(
           'mathquest_session',
           JSON.stringify({ token: res.token, user: res.user, student: res.student })
         );
+        // Purge legacy persistent keys
+        try {
+          localStorage.removeItem('mathquest_token');
+          localStorage.removeItem('mathquest_session');
+        } catch (_) {}
       }
       return res;
     } catch (err) {
@@ -65,11 +75,16 @@ export const authService = {
     try {
       const res = await apiClient.post('/auth/admin-login', credentials);
       if (res && res.token && typeof res.token === 'string') {
-        localStorage.setItem('mathquest_admin_token', res.token);
-        localStorage.setItem(
+        sessionStorage.setItem('mathquest_admin_token', res.token);
+        sessionStorage.setItem(
           'mathquest_admin_session',
           JSON.stringify({ token: res.token, user: res.user })
         );
+        // Purge legacy persistent keys
+        try {
+          localStorage.removeItem('mathquest_admin_token');
+          localStorage.removeItem('mathquest_admin_session');
+        } catch (_) {}
       }
       return res;
     } catch (err) {
@@ -110,12 +125,12 @@ export const authService = {
       const res = await apiClient.put('/auth/profile', profileData);
       // Update cached session
       try {
-        const sessionStr = localStorage.getItem('mathquest_session');
+        const sessionStr = sessionStorage.getItem('mathquest_session');
         if (sessionStr) {
           const session = JSON.parse(sessionStr);
           if (session.student && res && res.student) {
             session.student = { ...session.student, ...res.student };
-            localStorage.setItem('mathquest_session', JSON.stringify(session));
+            sessionStorage.setItem('mathquest_session', JSON.stringify(session));
           }
         }
       } catch (_e) {}
@@ -128,9 +143,11 @@ export const authService = {
   // ─── Student Logout ────────────────────────────────────────────────────────
   logout() {
     try {
+      sessionStorage.removeItem('mathquest_token');
+      sessionStorage.removeItem('mathquest_session');
+      sessionStorage.removeItem('educational_quest_gameplay_session');
       localStorage.removeItem('mathquest_token');
       localStorage.removeItem('mathquest_session');
-      sessionStorage.removeItem('educational_quest_gameplay_session');
       localStorage.removeItem('educational_quest_gameplay_session');
     } catch (_e) {}
   },
@@ -138,6 +155,8 @@ export const authService = {
   // ─── Admin Logout ──────────────────────────────────────────────────────────
   adminLogout() {
     try {
+      sessionStorage.removeItem('mathquest_admin_token');
+      sessionStorage.removeItem('mathquest_admin_session');
       localStorage.removeItem('mathquest_admin_token');
       localStorage.removeItem('mathquest_admin_session');
     } catch (_e) {}
