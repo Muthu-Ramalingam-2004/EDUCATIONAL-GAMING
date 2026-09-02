@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Zap, Puzzle, MoveHorizontal, Clock, Trophy, Brain, Lock, Play, Sparkles, BookOpen, Layers } from 'lucide-react';
+import { Zap, Puzzle, MoveHorizontal, Clock, Trophy, Brain, Play, Sparkles, BookOpen, Layers } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { SUPPORTED_GRADES, SUBJECTS_BY_GRADE, getChaptersForGradeAndSubject } from '../data/curriculumData';
 
@@ -54,7 +54,7 @@ export default function GameModeScreen({ onSelectMode, playerLevel, currentGrade
     {
       id: 'timeattack',
       title: 'TIME ATTACK SPEEDWAY',
-      desc: 'Race against a fast clock to solve maximum subject problems before time runs out',
+      desc: 'Race against a 15-second clock to solve maximum subject problems before time runs out',
       difficulty: 'Extreme',
       xp: 250,
       icon: Clock,
@@ -92,7 +92,7 @@ export default function GameModeScreen({ onSelectMode, playerLevel, currentGrade
       classStandard: selectedGrade,
       subjectId: selectedSubject,
       chapterId: activeChapter?.id,
-      topicId: activeChapter?.topicId || 'number_systems'
+      topicId: activeChapter?.topicId
     });
   };
 
@@ -107,50 +107,54 @@ export default function GameModeScreen({ onSelectMode, playerLevel, currentGrade
       >
         <div className="orb-glow-cyan top-0 right-0 blur-[130px] opacity-35" />
         <span className="text-amber-400 font-heading font-black text-xs uppercase tracking-widest block mb-1 flex items-center gap-1.5">
-          <Sparkles className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} /> DYNAMIC PLAY MODES MODULE
+          <Sparkles className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '6s' }} /> PLAY MODES MODULE
         </span>
         <h1 className="text-3xl sm:text-4xl font-black font-heading tracking-tight text-white">
           Interactive Challenge Modes
         </h1>
         <p className="text-sm text-cyan-200 mt-1.5 font-medium font-body">
-          Select your Grade, Subject, and Topic to launch custom game challenges across all 6 playable modes!
+          Select your Standard, Subject, and Topic to launch custom challenges across all 6 playable modes!
         </p>
       </motion.div>
 
-      {/* 1. GRADE STANDARD SELECTOR */}
+      {/* 1. STANDARD SELECTOR (4th STD - 12th STD) */}
       <div className="glass-panel p-5 rounded-3xl border border-indigo-500/20 bg-slate-950/60 space-y-3">
         <span className="text-xs font-black text-slate-400 uppercase tracking-widest block flex items-center gap-2">
-          <BookOpen className="w-4 h-4 text-indigo-400" /> SELECT CLASS STANDARD (GRADES 4TH – 12TH)
+          <BookOpen className="w-4 h-4 text-indigo-400" /> SELECT STANDARD (4TH STD – 12TH STD)
         </span>
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {SUPPORTED_GRADES.map(g => (
-            <button
-              key={g.id}
-              onClick={() => {
-                sound.playClick();
-                setSelectedGrade(g.id);
-                const subjs = SUBJECTS_BY_GRADE[g.id] || [];
-                const firstSubj = subjs[0]?.id || 'maths';
-                setSelectedSubject(firstSubj);
-                const chs = getChaptersForGradeAndSubject(g.id, firstSubj);
-                setSelectedChapterId(chs[0]?.id);
-              }}
-              className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap border shrink-0 ${
-                selectedGrade === g.id
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-cyan-400 shadow-lg shadow-cyan-500/30 scale-105'
-                  : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              Grade {g.name}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none font-heading font-black">
+          {SUPPORTED_GRADES.map(g => {
+            const stdLabel = `${g.id}th STD`;
+            const isSelected = selectedGrade === g.id;
+            return (
+              <button
+                key={g.id}
+                onClick={() => {
+                  sound.playClick();
+                  setSelectedGrade(g.id);
+                  const subjs = SUBJECTS_BY_GRADE[g.id] || [];
+                  const firstSubj = subjs[0]?.id || 'maths';
+                  setSelectedSubject(firstSubj);
+                  const chs = getChaptersForGradeAndSubject(g.id, firstSubj);
+                  setSelectedChapterId(chs[0]?.id);
+                }}
+                className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap border shrink-0 ${
+                  isSelected
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-cyan-400 shadow-lg shadow-cyan-500/30 scale-105'
+                    : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {stdLabel}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* 2. SUBJECT TABS SELECTOR */}
       <div className="glass-panel p-5 rounded-3xl border border-indigo-500/20 bg-slate-950/60 space-y-3">
         <span className="text-xs font-black text-slate-400 uppercase tracking-widest block flex items-center gap-2">
-          <Layers className="w-4 h-4 text-cyan-400" /> SELECT CURRICULUM SUBJECT
+          <Layers className="w-4 h-4 text-cyan-400" /> SELECT SUBJECT
         </span>
         <div className="flex items-center gap-2.5 overflow-x-auto pb-2 scrollbar-none">
           {availableSubjects.map(subj => (
@@ -203,7 +207,7 @@ export default function GameModeScreen({ onSelectMode, playerLevel, currentGrade
               >
                 <div>
                   <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider block mb-1">
-                    {ch.chapter}
+                    {ch.chapter || 'TOPIC'}
                   </span>
                   <h4 className="text-sm font-black text-white leading-snug">{ch.title}</h4>
                   <p className="text-[11px] text-slate-400 mt-1 font-body leading-relaxed">{ch.subtitle}</p>
@@ -225,7 +229,7 @@ export default function GameModeScreen({ onSelectMode, playerLevel, currentGrade
           <h2 className="text-xl font-black text-white flex items-center gap-2">
             <Trophy className="w-5 h-5 text-amber-400" /> Play Modes for {activeChapter?.title || 'Selected Topic'}
           </h2>
-          <span className="text-xs text-slate-400">Class {selectedGrade} • {availableSubjects.find(s=>s.id===selectedSubject)?.name}</span>
+          <span className="text-xs text-slate-400">{selectedGrade}th Standard • {availableSubjects.find(s=>s.id===selectedSubject)?.name}</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
