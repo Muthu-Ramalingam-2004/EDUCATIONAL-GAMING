@@ -29,7 +29,10 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     try {
-      const token = localStorage.getItem('mathquest_token');
+      const adminToken = localStorage.getItem('mathquest_admin_token');
+      const studentToken = localStorage.getItem('mathquest_token');
+      const isAdminRoute = config.url && config.url.includes('/admin');
+      const token = (isAdminRoute && adminToken) ? adminToken : (studentToken || adminToken);
       if (token && typeof token === 'string') {
         config.headers.Authorization = `Bearer ${token}`;
       }

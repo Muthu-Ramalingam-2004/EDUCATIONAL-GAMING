@@ -71,49 +71,43 @@ export default function App() {
       const savedSession = localStorage.getItem('mathquest_session');
       if (savedSession) {
         const parsed = JSON.parse(savedSession);
-        if (parsed && parsed.token) {
-          if (parsed.user && parsed.user.role === 'admin') {
-            setIsAdmin(true);
-            setIsAuthenticated(true);
-            setCurrentScreen('admin');
-            
-            // Asynchronously verify token validity
-            adminService.getDashboardStats();
-          } else if (parsed.student) {
-            setUser((prev) => ({
-              ...prev,
-              ...parsed.student,
-              xp: parsed.student.totalXp ?? parsed.student.xp ?? prev.xp,
-              level: parsed.student.level ?? prev.level,
-              coins: parsed.student.coins ?? prev.coins,
-              streakDays: parsed.student.streakDays ?? prev.streakDays,
-              activeClass: parsed.student.classStandard ?? prev.activeClass
-            }));
-            setIsAdmin(false);
-            setIsAuthenticated(true);
+        if (parsed && parsed.token && (parsed.student || parsed.user)) {
+          const studentData = parsed.student || parsed.user;
+          setUser((prev) => ({
+            ...prev,
+            ...studentData,
+            xp: studentData.totalXp ?? studentData.xp ?? prev.xp,
+            level: studentData.level ?? prev.level,
+            coins: studentData.coins ?? prev.coins,
+            streakDays: studentData.streakDays ?? prev.streakDays,
+            activeClass: studentData.classStandard ?? prev.activeClass
+          }));
+          setIsAdmin(false);
+          setIsAuthenticated(true);
+          setShowSplash(false);
 
-            // Check if active gameplay session exists for instant refresh recovery
-            try {
-              const activeGameplayRaw = sessionStorage.getItem('educational_quest_gameplay_session') || localStorage.getItem('educational_quest_gameplay_session');
-              if (activeGameplayRaw) {
-                const activeSession = JSON.parse(activeGameplayRaw);
-                if (activeSession && activeSession.currentScreen === 'gameplay' && (Date.now() - (activeSession.timestamp || 0) < 7200000)) {
-                  setActiveMode(activeSession.activeMode || 'quiz');
-                  if (activeSession.classStandard) setSelectedGrade(activeSession.classStandard);
-                  if (activeSession.subjectId) setSelectedSubject(activeSession.subjectId);
-                  if (activeSession.selectedWorld) setSelectedWorld(activeSession.selectedWorld);
-                  if (activeSession.selectedLevel) setSelectedLevel(activeSession.selectedLevel);
-                  setRestoredSession(activeSession);
-                  setCurrentScreen('gameplay');
-                  return;
-                }
+          // Check if active gameplay session exists for instant refresh recovery
+          try {
+            const activeGameplayRaw = sessionStorage.getItem('educational_quest_gameplay_session') || localStorage.getItem('educational_quest_gameplay_session');
+            if (activeGameplayRaw) {
+              const activeSession = JSON.parse(activeGameplayRaw);
+              if (activeSession && activeSession.currentScreen === 'gameplay' && (Date.now() - (activeSession.timestamp || 0) < 7200000)) {
+                setActiveMode(activeSession.activeMode || 'quiz');
+                if (activeSession.classStandard) setSelectedGrade(activeSession.classStandard);
+                if (activeSession.subjectId) setSelectedSubject(activeSession.subjectId);
+                if (activeSession.selectedWorld) setSelectedWorld(activeSession.selectedWorld);
+                if (activeSession.selectedLevel) setSelectedLevel(activeSession.selectedLevel);
+                setRestoredSession(activeSession);
+                setCurrentScreen('gameplay');
+                return;
               }
-            } catch (err) {
-              console.warn('Active gameplay session recovery warning:', err);
             }
-
-            setCurrentScreen('home');
+          } catch (err) {
+            console.warn('Active gameplay session recovery warning:', err);
           }
+
+          setCurrentScreen('home');
+          return;
         }
       }
     } catch (e) {
@@ -142,8 +136,9 @@ export default function App() {
     syncProgress();
   }, [isAuthenticated, isAdmin]);
 
-  // XP & Level-up logic helper
+  // Handle Rewards & Level Up Calculations
   const addRewards = async (xpEarned, coinsEarned, badge = null) => {
+    
     setUser((prev) => {
       const newXp = prev.xp + xpEarned;
       const newCoins = prev.coins + coinsEarned;
@@ -182,7 +177,7 @@ export default function App() {
     } catch (err) {}
   };
 
-  // Student Login Success Handler
+  // Student Login Success Handler - ALWAYS opens User Game Dashboard ('home')
   const handleStudentLoginSuccess = (loginPayload) => {
     const studentData = loginPayload.student || loginPayload.user;
     if (studentData) {
@@ -214,15 +209,17 @@ export default function App() {
 
     setIsAuthenticated(true);
     setIsAdmin(false);
+    setShowSplash(false);
     setAuthScreenInitialMode('login');
     setAuthScreenInitialError('');
     setCurrentScreen('home');
   };
 
-  // Admin Login Success Handler
+  // Admin Login Success Handler - Opens Admin Dashboard ('admin') after explicit Admin authentication
   const handleAdminLoginSuccess = (adminPayload) => {
     setIsAuthenticated(true);
     setIsAdmin(true);
+    setShowSplash(false);
     setAuthScreenInitialMode('login');
     setAuthScreenInitialError('');
     setCurrentScreen('admin');
@@ -246,21 +243,15 @@ export default function App() {
   };
 
   // ─── ADMIN "SECURE LOGOUT" (from Admin Panel sidebar) ───────────────────────
-  // Clears admin token — next Admin Panel visit requires credentials.
   const handleAdminLogout = () => {
-    authService.logout();
-    setIsAuthenticated(false);
+    authService.adminLogout();
     setIsAdmin(false);
-    setAuthScreenInitialMode('admin');
-    setAuthScreenInitialError('');
-    setShowSplash(false);
+    setCurrentScreen('home');
   };
 
   // ─── EXIT ADMIN PANEL (return to student dashboard) ─────────────────────────
-  // Keeps admin token in localStorage. Next Admin Panel click restores silently.
   const handleExitAdmin = () => {
     setIsAdmin(false);
-    setIsAuthenticated(true);
     setCurrentScreen('home');
   };
 
@@ -282,20 +273,17 @@ export default function App() {
       } catch (_) {}
     }
     if (screen === 'admin') {
-      // Already in admin mode
       if (isAdmin) {
         setCurrentScreen('admin');
         return;
       }
-      // Check for a stored valid admin session (e.g. after "Exit Admin")
+      // Check for stored valid admin session
       try {
-        const raw = localStorage.getItem('mathquest_session');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed && parsed.token && parsed.user && parsed.user.role === 'admin') {
-            // Silently restore admin session — no credentials needed
+        const adminRaw = localStorage.getItem('mathquest_admin_session');
+        if (adminRaw) {
+          const parsedAdmin = JSON.parse(adminRaw);
+          if (parsedAdmin && parsedAdmin.token && parsedAdmin.user && parsedAdmin.user.role === 'admin') {
             setIsAdmin(true);
-            setIsAuthenticated(true);
             setCurrentScreen('admin');
             return;
           }

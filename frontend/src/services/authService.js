@@ -65,10 +65,10 @@ export const authService = {
     try {
       const res = await apiClient.post('/auth/admin-login', credentials);
       if (res && res.token && typeof res.token === 'string') {
-        localStorage.setItem('mathquest_token', res.token);
+        localStorage.setItem('mathquest_admin_token', res.token);
         localStorage.setItem(
-          'mathquest_session',
-          JSON.stringify({ token: res.token, user: res.user, student: null })
+          'mathquest_admin_session',
+          JSON.stringify({ token: res.token, user: res.user })
         );
       }
       return res;
@@ -125,11 +125,21 @@ export const authService = {
     }
   },
 
-  // ─── Logout ───────────────────────────────────────────────────────────────
+  // ─── Student Logout ────────────────────────────────────────────────────────
   logout() {
     try {
       localStorage.removeItem('mathquest_token');
       localStorage.removeItem('mathquest_session');
+      sessionStorage.removeItem('educational_quest_gameplay_session');
+      localStorage.removeItem('educational_quest_gameplay_session');
+    } catch (_e) {}
+  },
+
+  // ─── Admin Logout ──────────────────────────────────────────────────────────
+  adminLogout() {
+    try {
+      localStorage.removeItem('mathquest_admin_token');
+      localStorage.removeItem('mathquest_admin_session');
     } catch (_e) {}
   },
 };
