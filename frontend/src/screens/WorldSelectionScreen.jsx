@@ -44,7 +44,7 @@ export default function WorldSelectionScreen({ currentClass, currentSubject, onS
       >
         <div className="orb-glow-purple top-0 right-0 blur-[120px] opacity-35" />
         <div className="flex items-center gap-2 text-amber-400 font-heading font-black text-xs uppercase tracking-wider mb-2">
-          <Trophy className="w-4 h-4 text-amber-400" /> MATHQUEST CURRICULUM REALMS
+          <Trophy className="w-4 h-4 text-amber-400" /> QUIZ WORLDS ARENA
         </div>
         <h1 className="text-3xl sm:text-4xl font-black font-heading tracking-tight text-white">
           Explore Grades 4th – 12th & Subjects

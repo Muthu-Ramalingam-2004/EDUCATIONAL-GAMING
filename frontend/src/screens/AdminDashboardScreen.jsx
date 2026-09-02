@@ -632,39 +632,86 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
               <div className="space-y-4">
                 
                 {/* Question Filter Panel */}
-                <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-950/40 p-4 rounded-2xl border border-white/10 w-full min-w-0 box-border">
-                  <div className="flex items-center gap-2 flex-wrap min-w-0 max-w-full">
-                    <span className="text-xs text-slate-400 font-bold uppercase shrink-0">Grade Standard filter:</span>
-                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                      <button
-                        onClick={() => { sound.playClick(); setQuestionClassFilter('all'); }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
-                          questionClassFilter === 'all' 
-                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-md' 
-                            : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        All Grades
-                      </button>
-                      {[4, 5, 6, 7, 8, 9, 10, 11, 12].map(gNum => (
+                <div className="flex flex-col gap-3 bg-slate-950/40 p-4 rounded-2xl border border-white/10 w-full min-w-0 box-border">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0 max-w-full">
+                      <span className="text-xs text-slate-400 font-bold uppercase shrink-0">Grade Standard filter:</span>
+                      <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                         <button
-                          key={gNum}
-                          onClick={() => { sound.playClick(); setQuestionClassFilter(String(gNum)); }}
+                          onClick={() => { sound.playClick(); setQuestionClassFilter('all'); }}
                           className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
-                            questionClassFilter === String(gNum) 
+                            questionClassFilter === 'all' 
                               ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-md' 
                               : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
                           }`}
                         >
-                          Grade {gNum}
+                          All Grades
+                        </button>
+                        {[4, 5, 6, 7, 8, 9, 10, 11, 12].map(gNum => (
+                          <button
+                            key={gNum}
+                            onClick={() => { sound.playClick(); setQuestionClassFilter(String(gNum)); }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
+                              questionClassFilter === String(gNum) 
+                                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-500/30 shadow-md' 
+                                : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            Grade {gNum}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <span className="text-xs text-slate-400 font-bold">
+                      Active Question Count: <strong className="text-cyan-400 font-bold">{filteredQuestions.length}</strong>
+                    </span>
+                  </div>
+
+                  {/* Subject Filter Bar */}
+                  <div className="flex items-center gap-2 flex-wrap min-w-0 max-w-full pt-2 border-t border-white/5">
+                    <span className="text-xs text-slate-400 font-bold uppercase shrink-0">Subject filter:</span>
+                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                      <button
+                        onClick={() => { sound.playClick(); setQuestionSubjectFilter('all'); }}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
+                          questionSubjectFilter === 'all' 
+                            ? 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white border-cyan-500/30 shadow-md' 
+                            : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        All Subjects
+                      </button>
+                      {[
+                        { id: 'maths', label: 'Maths' },
+                        { id: 'science', label: 'Science' },
+                        { id: 'english', label: 'English' },
+                        { id: 'social', label: 'Social' },
+                        { id: 'tamil', label: 'Tamil' },
+                        { id: 'physics', label: 'Physics' },
+                        { id: 'chemistry', label: 'Chemistry' },
+                        { id: 'biology', label: 'Biology' },
+                        { id: 'cs', label: 'CS' },
+                        { id: 'ca', label: 'CA' },
+                        { id: 'history', label: 'History' },
+                        { id: 'economics', label: 'Economics' },
+                        { id: 'commerce', label: 'Commerce' },
+                        { id: 'accounts', label: 'Accounts' }
+                      ].map(sObj => (
+                        <button
+                          key={sObj.id}
+                          onClick={() => { sound.playClick(); setQuestionSubjectFilter(sObj.id); }}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
+                            questionSubjectFilter === sObj.id 
+                              ? 'bg-gradient-to-r from-cyan-600 to-indigo-600 text-white border-cyan-500/30 shadow-md' 
+                              : 'bg-slate-900/60 border-white/5 text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          {sObj.label}
                         </button>
                       ))}
                     </div>
                   </div>
-
-                  <span className="text-xs text-slate-400 font-bold">
-                    Active Question Count: <strong className="text-cyan-400 font-bold">{filteredQuestions.length}</strong>
-                  </span>
                 </div>
 
                 {/* Question List Cards */}

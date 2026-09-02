@@ -5,7 +5,7 @@ import { sound } from '../../utils/sound';
 export default function NavigationBar({ currentScreen, onNavigate, isAdmin }) {
   const navItems = [
     { id: 'home', label: 'Home Dashboard', icon: Home },
-    { id: 'worlds', label: 'Math Worlds', icon: Compass },
+    { id: 'worlds', label: 'Quiz Worlds', icon: Compass },
     { id: 'modes', label: 'Play Modes', icon: Gamepad2 },
     { id: 'map', label: 'Level Map', icon: MapPin },
     { id: 'progress', label: 'Analytics', icon: BarChart3 },
@@ -53,7 +53,7 @@ export default function NavigationBar({ currentScreen, onNavigate, isAdmin }) {
               Math<span className="text-amber-500 dark:text-amber-400">Quest</span>
             </h1>
             <span className="text-[10px] font-black text-indigo-600 dark:text-cyan-400 uppercase tracking-widest block mt-1">
-              CBSE Class 9 & 10
+              Classes 4th – 12th All Subjects
             </span>
           </div>
         </div>

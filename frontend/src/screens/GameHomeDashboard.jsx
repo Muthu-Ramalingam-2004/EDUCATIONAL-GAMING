@@ -96,7 +96,7 @@ export default function GameHomeDashboard({ user, onContinueGame, onStartMode, o
               Welcome Back, {user.name}! 🎮
             </h1>
             <p className="text-sm text-slate-600 dark:text-cyan-200 mt-1 font-medium font-body">
-              Standard {user.activeClass}th Mathematics Conquest • Ready to claim +250 XP today?
+              Standard {user.activeClass}th Quiz Conquest • Ready to claim +250 XP today?
             </p>
           </div>
 
