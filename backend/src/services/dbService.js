@@ -9,6 +9,12 @@ import { initialQuestionsData, initialBadgesData } from '../data/initialQuestion
 
 function mapStudentRow(row) {
   if (!row) return null;
+  let topicProgMap = {};
+  if (row.topic_progress) {
+    try {
+      topicProgMap = typeof row.topic_progress === 'string' ? JSON.parse(row.topic_progress) : row.topic_progress;
+    } catch (_) {}
+  }
   return {
     id: row.id,
     name: row.name || 'Student',
@@ -27,6 +33,8 @@ function mapStudentRow(row) {
     bestScore: Number(row.best_score) || 0,
     currentWorldId: row.current_world_id || 'class9_world1',
     currentWorldName: row.current_world_name || 'Number Quest',
+    lastActiveLevelNumber: Number(row.last_active_level_number) || 1,
+    topicProgress: topicProgMap,
     recentBadge: row.recent_badge || '🎯 Novice Adventurer',
     createdAt: row.created_at
   };
@@ -329,6 +337,8 @@ class PersistentDataStore {
       if (updateData.streakDays) dbUpdates.streak_days = Number(updateData.streakDays);
       if (updateData.currentWorldId) dbUpdates.current_world_id = updateData.currentWorldId;
       if (updateData.currentWorldName) dbUpdates.current_world_name = updateData.currentWorldName;
+      if (updateData.lastActiveLevelNumber !== undefined) dbUpdates.last_active_level_number = Number(updateData.lastActiveLevelNumber);
+      if (updateData.topicProgress !== undefined) dbUpdates.topic_progress = updateData.topicProgress;
       if (updateData.recentBadge) dbUpdates.recent_badge = updateData.recentBadge;
 
       const { data, error } = await supabase
@@ -350,7 +360,19 @@ class PersistentDataStore {
   }
 
   // ─── SUBMIT GAME ATTEMPT ──────────────────────────────────────────────────
-  async submitGameAttempt({ studentId, gameId = 'quiz', answers = [], timeTakenSeconds = 120 }) {
+  async submitGameAttempt({
+    studentId,
+    gameId = 'quiz',
+    classStandard,
+    subjectId,
+    chapterId,
+    topicId,
+    levelNumber = 1,
+    answers = [],
+    timeTakenSeconds = 120,
+    accuracyPct: reqAccuracy,
+    score: reqScore
+  }) {
     const student = await this.getStudentById(studentId);
     if (!student) {
       console.warn(`[DB] submitGameAttempt: student not found id="${studentId}"`);
@@ -371,10 +393,39 @@ class PersistentDataStore {
       }
     });
 
-    const score = correctCount * 100 + 50;
-    const accuracyPct = Math.round((correctCount / totalQuestions) * 100);
-    const xpEarned = correctCount * 30 + 50;
-    const coinsEarned = correctCount * 10 + 20;
+    const accuracyPct = reqAccuracy !== undefined ? reqAccuracy : Math.round((correctCount / totalQuestions) * 100);
+    const score = reqScore !== undefined ? reqScore : (correctCount * 100 + 50);
+
+    // Calculate Stars based on gameplay performance:
+    let starsEarned = 0;
+    if (accuracyPct >= 90) starsEarned = 3;
+    else if (accuracyPct >= 70) starsEarned = 2;
+    else if (accuracyPct >= 50) starsEarned = 1;
+    else starsEarned = 0;
+
+    const xpEarned = correctCount * 30 + (starsEarned * 25) + 50;
+    const coinsEarned = correctCount * 10 + (starsEarned * 10) + 20;
+
+    // Progression logic per topic/chapter
+    const activeTopic = topicId || chapterId || student.currentWorldId || 'number_systems';
+    const currentLvlNum = Number(levelNumber) || 1;
+
+    const topicProgressMap = student.topicProgress || {};
+    const topicProg = topicProgressMap[activeTopic] || {
+      completedLevels: [],
+      starsMap: {},
+      unlockedLevel: 1
+    };
+
+    if (accuracyPct >= 50 || correctCount > 0) {
+      if (!topicProg.completedLevels.includes(currentLvlNum)) {
+        topicProg.completedLevels.push(currentLvlNum);
+      }
+      topicProg.starsMap[currentLvlNum] = Math.max(topicProg.starsMap[currentLvlNum] || 0, starsEarned);
+      topicProg.unlockedLevel = Math.max(topicProg.unlockedLevel || 1, Math.min(5, currentLvlNum + 1));
+    }
+
+    topicProgressMap[activeTopic] = topicProg;
 
     const previousLevel = student.level;
     const newTotalXp = student.totalXp + xpEarned;
@@ -388,7 +439,10 @@ class PersistentDataStore {
       coins: newCoins,
       gamesPlayed: student.gamesPlayed + 1,
       questionsSolved: student.questionsSolved + correctCount,
-      bestScore: newBestScore
+      bestScore: newBestScore,
+      currentWorldId: activeTopic,
+      lastActiveLevelNumber: topicProg.unlockedLevel,
+      topicProgress: topicProgressMap
     });
 
     const attempt = {
@@ -401,6 +455,9 @@ class PersistentDataStore {
       timeTakenSeconds,
       xpEarned,
       coinsEarned,
+      starsEarned,
+      levelNumber: currentLvlNum,
+      topicId: activeTopic,
       completedAt: new Date().toISOString()
     };
 
@@ -442,6 +499,9 @@ class PersistentDataStore {
       levelUp,
       previousLevel,
       newLevel,
+      starsEarned,
+      nextUnlockedLevel: topicProg.unlockedLevel,
+      topicProgress: topicProg,
       score,
       correctCount,
       totalQuestions,

@@ -357,9 +357,11 @@ export default function App() {
               user={user}
               onContinueGame={() => {
                 const chapters = getChaptersForGradeAndSubject(selectedGrade || user.activeClass || 9, selectedSubject || 'maths');
-                const activeCh = chapters[0];
+                const activeCh = selectedWorld || chapters[0];
+                const topicKey = activeCh ? (activeCh.topicId || activeCh.id) : 'number_systems';
+                const unlocked = user.topicProgress?.[topicKey]?.unlockedLevel || user.lastActiveLevelNumber || 1;
                 setSelectedWorld(activeCh);
-                setSelectedLevel(user.level || 1);
+                setSelectedLevel(unlocked);
                 navigateTo('map');
               }}
               onStartMode={(modeId) => {
@@ -400,6 +402,7 @@ export default function App() {
           {currentScreen === 'map' && (
             <LevelMapScreen
               world={selectedWorld || getChaptersForGradeAndSubject(selectedGrade, selectedSubject)[0]}
+              user={user}
               onStartLevel={(lvl) => {
                 setActiveMode('quiz');
                 setSelectedLevel(lvl.id || 1);
@@ -447,10 +450,19 @@ export default function App() {
                 topicId={activeCh ? activeCh.topicId : null}
                 levelInfo={activeCh ? { title: activeCh.title, levelNumber: selectedLevel } : { title: `Level ${selectedLevel}`, levelNumber: selectedLevel }}
                 onCompleteGame={(results) => {
+                  if (results.updatedStudent) {
+                    setUser(prev => {
+                      const merged = { ...prev, ...results.updatedStudent };
+                      try {
+                        localStorage.setItem('mathquest_session', JSON.stringify({ token: userToken, user: merged }));
+                      } catch (err) {}
+                      return merged;
+                    });
+                  }
                   setGameResult({
                     ...results,
                     mode: activeMode,
-                    levelTitle: activeCh ? activeCh.title : 'MathQuest Challenge',
+                    levelTitle: activeCh ? activeCh.title : 'QuizQuest Challenge',
                     user: {
                       name: user.name || 'Student Player',
                       username: user.username || 'student',
@@ -477,7 +489,8 @@ export default function App() {
                 addRewards(rewardData.xp, rewardData.coins, rewardData.badge);
               }}
               onPlayNext={() => {
-                setSelectedLevel(prev => prev + 1);
+                const nextLvl = gameResult?.nextUnlockedLevel || (selectedLevel + 1);
+                setSelectedLevel(nextLvl);
                 navigateTo('gameplay');
               }}
               onHome={() => {

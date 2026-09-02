@@ -336,18 +336,31 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
       setShowHint(false);
       setMemoryCompleted(false);
     } else {
-      let submitRes = {};
-      try {
-        submitRes = await gameService.submitGame(mode, {
-          answers: userAnswers,
-          timeTakenSeconds: 105
-        }) || {};
-      } catch (err) {}
-
       const totalQ = questionsList.length;
       const finalCorrect = correctCount;
       const finalWrong = Math.max(0, totalQ - finalCorrect);
       const actualAccuracy = Math.round((finalCorrect / (totalQ || 1)) * 100);
+
+      let submitRes = {};
+      try {
+        submitRes = await gameService.submitGame(mode, {
+          classStandard,
+          subjectId,
+          chapterId: chapterId || topicId,
+          topicId,
+          levelNumber: levelInfo?.levelNumber || 1,
+          answers: userAnswers,
+          timeTakenSeconds: 105,
+          score,
+          accuracyPct: actualAccuracy,
+          correctCount: finalCorrect,
+          totalQuestions: totalQ
+        }) || {};
+      } catch (err) {}
+
+      const starsEarned = submitRes.starsEarned !== undefined 
+        ? submitRes.starsEarned 
+        : (actualAccuracy >= 90 ? 3 : actualAccuracy >= 70 ? 2 : actualAccuracy >= 50 ? 1 : 0);
 
       onCompleteGame({
         score: score,
@@ -355,13 +368,16 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
         wrongCount: finalWrong,
         totalQuestions: totalQ,
         accuracyPct: actualAccuracy,
-        xpEarned: xpEarned || (finalCorrect * 50),
-        coinsEarned: coinsEarned || (finalCorrect * 20),
+        starsEarned: starsEarned,
+        nextUnlockedLevel: submitRes.nextUnlockedLevel || ((levelInfo?.levelNumber || 1) + 1),
+        xpEarned: submitRes.xpEarned || xpEarned || (finalCorrect * 50),
+        coinsEarned: submitRes.coinsEarned || coinsEarned || (finalCorrect * 20),
         timeTaken: '01:45',
         levelUp: submitRes.levelUp || false,
         newLevel: submitRes.newLevel,
         previousLevel: submitRes.previousLevel,
-        questionsDetail: userAnswers
+        questionsDetail: userAnswers,
+        updatedStudent: submitRes.student
       });
     }
   };

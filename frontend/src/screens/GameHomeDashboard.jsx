@@ -137,10 +137,10 @@ export default function GameHomeDashboard({ user, onContinueGame, onStartMode, o
 
             <div>
               <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight font-heading uppercase">
-                {user.currentWorldName || 'Algebra Arena'}
+                {user.currentWorldName || 'Number Quest'}
               </h2>
               <p className="text-base font-bold text-cyan-300 mt-1 font-heading">
-                Level 3: Polynomial Factorisation & Identities
+                Level {user.lastActiveLevelNumber || 1}: Curriculum Realm Mission
               </p>
             </div>
 
@@ -148,15 +148,15 @@ export default function GameHomeDashboard({ user, onContinueGame, onStartMode, o
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
               <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/15">
                 <span className="text-[10px] font-heading font-black text-slate-300 block uppercase">Mission</span>
-                <span className="text-sm font-heading font-black text-white">Algebra Arena</span>
+                <span className="text-sm font-heading font-black text-white">{user.currentWorldName || 'Number Quest'}</span>
               </div>
               <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/15">
-                <span className="text-[10px] font-heading font-black text-slate-300 block uppercase">Mission Progress</span>
-                <span className="text-sm font-heading font-black text-cyan-300">7 / 10 Solved</span>
+                <span className="text-[10px] font-heading font-black text-slate-300 block uppercase">Unlocked Level</span>
+                <span className="text-sm font-heading font-black text-cyan-300">Level {user.lastActiveLevelNumber || 1} / 5</span>
               </div>
               <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/15">
                 <span className="text-[10px] font-heading font-black text-slate-300 block uppercase">Difficulty</span>
-                <span className="text-sm font-heading font-black text-purple-300">Hard Mode</span>
+                <span className="text-sm font-heading font-black text-purple-300">Adaptive</span>
               </div>
               <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/15">
                 <span className="text-[10px] font-heading font-black text-slate-300 block uppercase">Reward</span>
@@ -183,7 +183,7 @@ export default function GameHomeDashboard({ user, onContinueGame, onStartMode, o
               <span className="tracking-wide">CONTINUE PLAYING</span>
             </motion.button>
             <span className="text-xs font-bold text-slate-300 mt-3 font-heading uppercase tracking-wider">
-              ⚡ Level 3 • 3 Questions Left To Unlock Chest
+              ⚡ Level {user.lastActiveLevelNumber || 1} • Ready for Challenge
             </span>
           </div>
 

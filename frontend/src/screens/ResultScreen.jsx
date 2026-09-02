@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Sparkles, Coins, Home, Play, Gift, FileText, FileSpreadsheet, Download, Loader2 } from 'lucide-react';
+import { Trophy, Sparkles, Coins, Home, Play, Gift, FileText, FileSpreadsheet, Download, Loader2, Star } from 'lucide-react';
 import { fireConfetti } from '../utils/confetti';
 import { sound } from '../utils/sound';
 import { exportToPDF, exportToExcel } from '../utils/exportResults';
@@ -23,10 +23,12 @@ export default function ResultScreen({ resultData, onClaimRewards, onPlayNext, o
     timeTaken: '02:15',
     xpEarned: 250,
     coinsEarned: 100,
+    starsEarned: 3,
     badgeEarned: '🏆 QUIZ CHAMPION'
   };
 
   const accuracy = Math.round((stats.correctCount / stats.totalQuestions) * 100);
+  const starsEarned = stats.starsEarned !== undefined ? stats.starsEarned : (accuracy >= 90 ? 3 : accuracy >= 70 ? 2 : accuracy >= 50 ? 1 : 0);
 
   const showNotification = (msg, type = 'success') => {
     setToastMsg(msg);
@@ -95,8 +97,33 @@ export default function ResultScreen({ resultData, onClaimRewards, onPlayNext, o
           MISSION COMPLETE! 🎉
         </h1>
         <p className="text-sm font-semibold text-cyan-200 mt-1 font-body">
-          Awesome job! You smashed the Maths challenge!
+          Awesome job! You completed the challenge mission!
         </p>
+
+        {/* Star Rating Display */}
+        <div className="flex items-center justify-center gap-3 my-5">
+          {[1, 2, 3].map((starNum) => {
+            const isEarned = starNum <= starsEarned;
+            return (
+              <motion.div
+                key={starNum}
+                initial={{ scale: 0, rotate: -30 }}
+                animate={{ scale: isEarned ? 1.15 : 0.9, rotate: 0 }}
+                transition={{ delay: starNum * 0.15, type: 'spring' }}
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 shadow-2xl ${
+                  isEarned
+                    ? 'bg-gradient-to-tr from-amber-400 via-yellow-400 to-amber-500 border-white text-slate-950 shadow-amber-400/60'
+                    : 'bg-slate-900/60 border-white/10 text-slate-600'
+                }`}
+              >
+                <Star className={`w-8 h-8 ${isEarned ? 'fill-slate-950 text-slate-950' : 'text-slate-600'}`} />
+              </motion.div>
+            );
+          })}
+        </div>
+        <span className="text-xs font-black text-amber-300 uppercase tracking-widest block font-heading">
+          {starsEarned === 3 ? '⭐⭐⭐ PERFECT 3-STAR MASTERY!' : starsEarned === 2 ? '⭐⭐ GREAT 2-STAR PERFORMANCE!' : starsEarned === 1 ? '⭐ LEVEL UNLOCKED (1 STAR)' : '0 STARS — RE-TRY FOR HIGHER ACCURACY'}
+        </span>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 my-8 font-heading">

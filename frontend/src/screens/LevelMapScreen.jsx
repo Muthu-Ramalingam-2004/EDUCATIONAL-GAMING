@@ -3,35 +3,72 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, Lock, Star, Play, Trophy, ArrowLeft, Zap } from 'lucide-react';
 import { sound } from '../utils/sound';
 
-export default function LevelMapScreen({ world, onStartLevel, onBack }) {
+export default function LevelMapScreen({ world, user, onStartLevel, onBack }) {
   const activeWorld = world || {
-    id: 'class9_world2',
-    title: 'World 2 – Algebra Arena',
-    subtitle: 'Polynomial Factorisation & Linear Equations',
+    id: 'class9_world1',
+    topicId: 'number_systems',
+    title: 'World 1 – Number Quest',
+    subtitle: 'Real Numbers & Irrational Surds',
     levels: [
-      { id: 1, title: 'Level 1 — Linear Equations', difficulty: 'Easy', stars: 3, completed: true, xp: 120 },
-      { id: 2, title: 'Level 2 — Graphing Equations', difficulty: 'Practice', stars: 3, completed: true, xp: 160 },
-      { id: 3, title: 'Level 3 — Polynomial Factorisation', difficulty: 'Challenge', stars: 2, completed: false, active: true, xp: 220 },
-      { id: 4, title: 'Level 4 — Algebraic Identities', difficulty: 'Hard', stars: 0, completed: false, locked: true, xp: 280 },
-      { id: 5, title: 'Level 5 — Algebra Overlord Boss', difficulty: 'Master Boss', stars: 0, completed: false, locked: true, xp: 400, isBoss: true }
+      { id: 1, title: 'Level 1 — Concept Basics', difficulty: 'Easy', xp: 120 },
+      { id: 2, title: 'Level 2 — Core Practice', difficulty: 'Practice', xp: 160 },
+      { id: 3, title: 'Level 3 — Concept Challenge', difficulty: 'Challenge', xp: 220 },
+      { id: 4, title: 'Level 4 — Advanced Mastery', difficulty: 'Hard', xp: 280 },
+      { id: 5, title: 'Level 5 — Overlord Boss Battle', difficulty: 'Master Boss', xp: 400, isBoss: true }
     ]
   };
 
+  const topicKey = activeWorld.topicId || activeWorld.id || 'number_systems';
+  const topicProg = user?.topicProgress?.[topicKey] || {
+    completedLevels: [],
+    starsMap: {},
+    unlockedLevel: 1
+  };
+
+  const completedSet = new Set(topicProg.completedLevels || []);
+  const unlockedLevelNum = Math.max(1, topicProg.unlockedLevel || 1);
+
+  const baseLevels = activeWorld.levels || [
+    { id: 1, title: 'Level 1 — Concept Basics', difficulty: 'Easy', xp: 120 },
+    { id: 2, title: 'Level 2 — Core Practice', difficulty: 'Practice', xp: 160 },
+    { id: 3, title: 'Level 3 — Concept Challenge', difficulty: 'Challenge', xp: 220 },
+    { id: 4, title: 'Level 4 — Advanced Mastery', difficulty: 'Hard', xp: 280 },
+    { id: 5, title: 'Level 5 — Overlord Boss Battle', difficulty: 'Master Boss', xp: 400, isBoss: true }
+  ];
+
+  const levelsList = baseLevels.map(lvl => {
+    const isCompleted = completedSet.has(lvl.id) || lvl.id < unlockedLevelNum;
+    const isActive = lvl.id === unlockedLevelNum;
+    const isLocked = lvl.id > unlockedLevelNum;
+    const stars = topicProg.starsMap?.[lvl.id] || (isCompleted ? 3 : 0);
+
+    return {
+      ...lvl,
+      completed: isCompleted,
+      active: isActive,
+      locked: isLocked,
+      stars: stars
+    };
+  });
+
+  const totalStarsEarned = levelsList.reduce((sum, l) => sum + (l.stars || 0), 0);
+  const maxPossibleStars = levelsList.length * 3;
+
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 font-heading">
       
       {/* Top Navigation & Status Bar */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => { sound.playClick(); onBack(); }}
-          className="btn-game-secondary text-xs py-2 px-4 flex items-center gap-2 cursor-pointer"
+          className="btn-game-secondary text-xs py-2 px-4 flex items-center gap-2 cursor-pointer font-black"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Realms
+          <ArrowLeft className="w-4 h-4" /> Back to Quiz Realms
         </button>
 
         <div className="flex items-center gap-2 bg-amber-500/15 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 px-4 py-2 rounded-2xl text-xs font-heading font-black border border-amber-500/30 dark:border-amber-400/40 shadow-md">
           <Trophy className="w-4 h-4 text-amber-500 fill-amber-400" />
-          <span>8 / 15 Stars Earned</span>
+          <span>{totalStarsEarned} / {maxPossibleStars} Stars Earned</span>
         </div>
       </div>
 
@@ -42,7 +79,7 @@ export default function LevelMapScreen({ world, onStartLevel, onBack }) {
       >
         <div className="orb-glow-cyan top-0 left-1/4 blur-[130px] opacity-35" />
         <span className="text-amber-400 font-heading font-black text-xs uppercase tracking-widest block mb-1">
-          PROGRESSION ROADMAP
+          LEVEL MAP PROGRESSION ROADMAP
         </span>
         <h1 className="text-3xl sm:text-4xl font-black font-heading tracking-tight text-white">
           {activeWorld.title}
@@ -58,7 +95,7 @@ export default function LevelMapScreen({ world, onStartLevel, onBack }) {
         {/* Vertical Connecting Neon Path Line */}
         <div className="absolute left-1/2 top-10 bottom-10 w-2.5 bg-gradient-to-b from-emerald-500 via-indigo-500 to-purple-600 -translate-x-1/2 -z-0 rounded-full shadow-lg" />
 
-        {activeWorld.levels.map((lvl, index) => {
+        {levelsList.map((lvl, index) => {
           const isCompleted = lvl.completed;
           const isActive = lvl.active;
           const isLocked = lvl.locked;
@@ -86,7 +123,13 @@ export default function LevelMapScreen({ world, onStartLevel, onBack }) {
                   onClick={() => {
                     if (!isLocked) {
                       sound.playClick();
-                      onStartLevel({ ...lvl, world: activeWorld, topicId: activeWorld.topicId, classStandard: activeWorld.classStandard, subjectId: activeWorld.subjectId });
+                      onStartLevel({
+                        ...lvl,
+                        world: activeWorld,
+                        topicId: activeWorld.topicId || activeWorld.id,
+                        classStandard: activeWorld.classStandard,
+                        subjectId: activeWorld.subjectId
+                      });
                     }
                   }}
                   className={`w-22 h-22 rounded-3xl font-heading font-black text-xl flex flex-col items-center justify-center border-4 shadow-2xl transition-all duration-300 transform cursor-pointer ${
@@ -128,7 +171,7 @@ export default function LevelMapScreen({ world, onStartLevel, onBack }) {
                       ? 'bg-purple-600 text-white border-purple-400' 
                       : 'bg-indigo-100 dark:bg-indigo-900/80 text-indigo-800 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/40'
                   }`}>
-                    {lvl.difficulty}
+                    {lvl.difficulty || 'Standard'}
                   </span>
 
                   <div className="flex gap-1">
@@ -150,17 +193,23 @@ export default function LevelMapScreen({ world, onStartLevel, onBack }) {
                 </h3>
 
                 <div className="flex items-center justify-between mt-4 pt-2 border-t border-slate-100 dark:border-white/10 text-xs">
-                  <span className="font-heading font-black text-amber-600 dark:text-amber-400">+ {lvl.xp} XP</span>
+                  <span className="font-heading font-black text-amber-600 dark:text-amber-400">+ {lvl.xp || 100} XP</span>
                   
-                  {isActive && (
+                  {!isLocked && (
                     <button
                       onClick={() => {
                         sound.playClick();
-                        onStartLevel({ ...lvl, world: activeWorld, topicId: activeWorld.topicId, classStandard: activeWorld.classStandard, subjectId: activeWorld.subjectId });
+                        onStartLevel({
+                          ...lvl,
+                          world: activeWorld,
+                          topicId: activeWorld.topicId || activeWorld.id,
+                          classStandard: activeWorld.classStandard,
+                          subjectId: activeWorld.subjectId
+                        });
                       }}
                       className="btn-game-gold text-[11px] py-1.5 px-4 shadow-lg cursor-pointer"
                     >
-                      PLAY NOW
+                      {isActive ? 'PLAY NOW' : 'PLAY AGAIN'}
                     </button>
                   )}
                 </div>

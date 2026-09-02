@@ -80,14 +80,26 @@ export function startGame(req, res) {
 export async function submitGame(req, res) {
   try {
     const { gameId } = req.params;
-    const { answers = [], timeTakenSeconds = 120 } = req.body;
+    const { answers = [], timeTakenSeconds = 120, classStandard, subjectId, chapterId, topicId, levelNumber, accuracyPct, score } = req.body;
     const studentId = req.user?.id;
 
     if (!studentId) {
       return res.status(401).json({ success: false, message: 'Authentication required.' });
     }
 
-    const result = await dbService.submitGameAttempt({ studentId, gameId, answers, timeTakenSeconds });
+    const result = await dbService.submitGameAttempt({
+      studentId,
+      gameId,
+      classStandard,
+      subjectId,
+      chapterId,
+      topicId,
+      levelNumber,
+      answers,
+      timeTakenSeconds,
+      accuracyPct,
+      score
+    });
 
     if (!result) {
       return res.status(404).json({ success: false, message: 'Student profile not found.' });
