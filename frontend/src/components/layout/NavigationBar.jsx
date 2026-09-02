@@ -49,8 +49,8 @@ export default function NavigationBar({ currentScreen, onNavigate, isAdmin }) {
             📐
           </div>
           <div>
-            <h1 className="font-black text-xl text-slate-900 dark:text-white tracking-tight leading-none font-heading group-hover:text-indigo-600 dark:group-hover:text-cyan-300 transition-colors">
-              Math<span className="text-amber-500 dark:text-amber-400">Quest</span>
+            <h1 className="font-black text-lg text-slate-900 dark:text-white tracking-tight leading-none font-heading group-hover:text-indigo-600 dark:group-hover:text-cyan-300 transition-colors">
+              Educational <span className="text-amber-500 dark:text-amber-400">Quest</span>
             </h1>
             <span className="text-[10px] font-black text-indigo-600 dark:text-cyan-400 uppercase tracking-widest block mt-1">
               Classes 4th – 12th All Subjects

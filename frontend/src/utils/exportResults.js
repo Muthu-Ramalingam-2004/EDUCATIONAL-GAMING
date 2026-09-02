@@ -97,11 +97,11 @@ export function exportToPDF(resultData) {
   doc.setFillColor(245, 158, 11); // Gold accent line (#f59e0b)
   doc.rect(0, 36, pageWidth, 2, 'F');
 
-  // MathQuest Logo / Title
+  // Educational Quest Logo / Title
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(22);
   doc.setTextColor(255, 255, 255);
-  doc.text('MathQuest', 14, 18);
+  doc.text('Educational Quest', 14, 18);
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
@@ -257,7 +257,7 @@ export function exportToExcel(resultData) {
 
   // ── SHEET 1: SUMMARY ────────────────────────────────────────────────────────
   const summaryRows = [
-    ['MATHQUEST GAME EVALUATION REPORT'],
+    ['EDUCATIONAL QUEST GAME EVALUATION REPORT'],
     ['Generated Date', data.dateStr],
     [],
     ['STUDENT DETAILS'],

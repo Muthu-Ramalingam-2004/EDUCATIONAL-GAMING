@@ -304,7 +304,7 @@ export default function AdminDashboardScreen({ onLogout, onExitAdmin }) {
             </div>
             <div>
               <h2 className="text-lg font-black tracking-tight text-white leading-tight">Admin Portal</h2>
-              <span className="text-[10px] text-purple-400 font-black tracking-wider uppercase">MathQuest Command</span>
+              <span className="text-[10px] text-purple-400 font-black tracking-wider uppercase">Educational Quest Command</span>
             </div>
           </div>
 

@@ -62,6 +62,9 @@ export default function App() {
   const [levelUpModal, setLevelUpModal] = useState(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
 
+  // Session & Gameplay Restoration State
+  const [restoredSession, setRestoredSession] = useState(null);
+
   // 1. Session Restoration on Application Load
   useEffect(() => {
     try {
@@ -88,6 +91,27 @@ export default function App() {
             }));
             setIsAdmin(false);
             setIsAuthenticated(true);
+
+            // Check if active gameplay session exists for instant refresh recovery
+            try {
+              const activeGameplayRaw = sessionStorage.getItem('educational_quest_gameplay_session') || localStorage.getItem('educational_quest_gameplay_session');
+              if (activeGameplayRaw) {
+                const activeSession = JSON.parse(activeGameplayRaw);
+                if (activeSession && activeSession.currentScreen === 'gameplay' && (Date.now() - (activeSession.timestamp || 0) < 7200000)) {
+                  setActiveMode(activeSession.activeMode || 'quiz');
+                  if (activeSession.classStandard) setSelectedGrade(activeSession.classStandard);
+                  if (activeSession.subjectId) setSelectedSubject(activeSession.subjectId);
+                  if (activeSession.selectedWorld) setSelectedWorld(activeSession.selectedWorld);
+                  if (activeSession.selectedLevel) setSelectedLevel(activeSession.selectedLevel);
+                  setRestoredSession(activeSession);
+                  setCurrentScreen('gameplay');
+                  return;
+                }
+              }
+            } catch (err) {
+              console.warn('Active gameplay session recovery warning:', err);
+            }
+
             setCurrentScreen('home');
           }
         }
@@ -207,6 +231,11 @@ export default function App() {
   // ─── FULL STUDENT LOGOUT ─────────────────────────────────────────────────────
   // Clears all tokens and returns to splash/login.
   const handleLogout = () => {
+    try {
+      sessionStorage.removeItem('educational_quest_gameplay_session');
+      localStorage.removeItem('educational_quest_gameplay_session');
+    } catch (_) {}
+    setRestoredSession(null);
     authService.logout();
     setIsAuthenticated(false);
     setIsAdmin(false);
@@ -245,6 +274,13 @@ export default function App() {
 
   // ─── ROLE-GUARDED NAVIGATION ────────────────────────────────────────────────
   const navigateTo = (screen) => {
+    if (screen !== 'gameplay') {
+      setRestoredSession(null);
+      try {
+        sessionStorage.removeItem('educational_quest_gameplay_session');
+        localStorage.removeItem('educational_quest_gameplay_session');
+      } catch (_) {}
+    }
     if (screen === 'admin') {
       // Already in admin mode
       if (isAdmin) {
@@ -449,12 +485,30 @@ export default function App() {
                 chapterId={activeCh ? activeCh.id : null}
                 topicId={activeCh ? activeCh.topicId : null}
                 levelInfo={activeCh ? { title: activeCh.title, levelNumber: selectedLevel } : { title: `Level ${selectedLevel}`, levelNumber: selectedLevel }}
+                restoredSession={restoredSession}
+                onExitGame={() => {
+                  setRestoredSession(null);
+                  try {
+                    sessionStorage.removeItem('educational_quest_gameplay_session');
+                    localStorage.removeItem('educational_quest_gameplay_session');
+                  } catch (_) {}
+                  navigateTo('home');
+                }}
                 onCompleteGame={(results) => {
+                  setRestoredSession(null);
+                  try {
+                    sessionStorage.removeItem('educational_quest_gameplay_session');
+                    localStorage.removeItem('educational_quest_gameplay_session');
+                  } catch (_) {}
                   if (results.updatedStudent) {
                     setUser(prev => {
                       const merged = { ...prev, ...results.updatedStudent };
                       try {
-                        localStorage.setItem('mathquest_session', JSON.stringify({ token: userToken, user: merged }));
+                        const raw = localStorage.getItem('mathquest_session');
+                        if (raw) {
+                          const parsed = JSON.parse(raw);
+                          localStorage.setItem('mathquest_session', JSON.stringify({ ...parsed, student: merged }));
+                        }
                       } catch (err) {}
                       return merged;
                     });
@@ -462,7 +516,7 @@ export default function App() {
                   setGameResult({
                     ...results,
                     mode: activeMode,
-                    levelTitle: activeCh ? activeCh.title : 'QuizQuest Challenge',
+                    levelTitle: activeCh ? activeCh.title : 'Educational Quest Challenge',
                     user: {
                       name: user.name || 'Student Player',
                       username: user.username || 'student',

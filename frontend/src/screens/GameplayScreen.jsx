@@ -4,14 +4,14 @@ import { Clock, Coins, Sparkles, CheckCircle2, XCircle, ArrowRight, HelpCircle, 
 import { gameService } from '../services/gameService';
 import { sound } from '../utils/sound';
 
-export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard, subjectId, chapterId, topicId, onCompleteGame }) {
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [coinsEarned, setCoinsEarned] = useState(0);
-  const [xpEarned, setXpEarned] = useState(0);
-  const [correctCount, setCorrectCount] = useState(0);
+export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard, subjectId, chapterId, topicId, restoredSession, onCompleteGame, onExitGame }) {
+  const [questionIndex, setQuestionIndex] = useState(restoredSession?.questionIndex || 0);
+  const [score, setScore] = useState(restoredSession?.score || 0);
+  const [coinsEarned, setCoinsEarned] = useState(restoredSession?.coinsEarned || 0);
+  const [xpEarned, setXpEarned] = useState(restoredSession?.xpEarned || 0);
+  const [correctCount, setCorrectCount] = useState(restoredSession?.correctCount || 0);
   const [timer, setTimer] = useState(mode === 'timeattack' ? 15 : 30);
-  const [userAnswers, setUserAnswers] = useState([]);
+  const [userAnswers, setUserAnswers] = useState(restoredSession?.userAnswers || []);
   const [questionsList, setQuestionsList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -30,6 +30,32 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
   const [flippedCards, setFlippedCards] = useState([]);
   const [matchedCardIds, setMatchedCardIds] = useState([]);
   const [memoryCompleted, setMemoryCompleted] = useState(false);
+
+  // Auto-save gameplay session state for seamless browser refresh recovery
+  useEffect(() => {
+    if (isLoading || !questionsList || questionsList.length === 0) return;
+    const sessionObj = {
+      currentScreen: 'gameplay',
+      activeMode: mode,
+      classStandard,
+      subjectId,
+      chapterId: chapterId || topicId,
+      topicId,
+      selectedLevel: levelInfo?.levelNumber || 1,
+      selectedWorld: { id: chapterId || topicId, topicId, classStandard, subjectId, title: levelInfo?.title },
+      questionIndex,
+      score,
+      coinsEarned,
+      xpEarned,
+      correctCount,
+      userAnswers,
+      timestamp: Date.now()
+    };
+    try {
+      sessionStorage.setItem('educational_quest_gameplay_session', JSON.stringify(sessionObj));
+      localStorage.setItem('educational_quest_gameplay_session', JSON.stringify(sessionObj));
+    } catch (_) {}
+  }, [mode, classStandard, subjectId, chapterId, topicId, levelInfo?.levelNumber, questionIndex, score, coinsEarned, xpEarned, correctCount, userAnswers, isLoading, questionsList]);
 
   useEffect(() => {
     async function initSession() {
@@ -327,6 +353,14 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
     }
   };
 
+  const handleExitGame = () => {
+    try {
+      sessionStorage.removeItem('educational_quest_gameplay_session');
+      localStorage.removeItem('educational_quest_gameplay_session');
+    } catch (_) {}
+    if (typeof onExitGame === 'function') onExitGame();
+  };
+
   const handleNext = async () => {
     sound.playClick();
     if (questionIndex + 1 < questionsList.length) {
@@ -336,6 +370,11 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
       setShowHint(false);
       setMemoryCompleted(false);
     } else {
+      try {
+        sessionStorage.removeItem('educational_quest_gameplay_session');
+        localStorage.removeItem('educational_quest_gameplay_session');
+      } catch (_) {}
+
       const totalQ = questionsList.length;
       const finalCorrect = correctCount;
       const finalWrong = Math.max(0, totalQ - finalCorrect);
@@ -426,8 +465,8 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
           </h2>
         </div>
 
-        {/* HUD Metrics */}
-        <div className="flex items-center gap-3 sm:gap-6 font-heading">
+        {/* HUD Metrics & Exit Option */}
+        <div className="flex items-center gap-3 sm:gap-4 font-heading">
           <div className="flex items-center gap-2 bg-indigo-50 dark:bg-white/5 px-3 py-1.5 rounded-2xl border border-indigo-200 dark:border-white/10">
             <Clock className={`w-5 h-5 ${timer <= 5 ? 'text-rose-500 animate-ping' : 'text-cyan-600 dark:text-cyan-400'}`} />
             <span className={`text-base font-black ${timer <= 5 ? 'text-rose-500' : 'text-slate-900 dark:text-white'}`}>{timer}s</span>
@@ -442,6 +481,13 @@ export default function GameplayScreen({ mode = 'quiz', levelInfo, classStandard
             <Trophy className="w-5 h-5 text-purple-400" />
             <span className="text-base font-black text-purple-300">{score} PTS</span>
           </div>
+
+          <button
+            onClick={handleExitGame}
+            className="px-3.5 py-1.5 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 text-xs font-black border border-rose-500/30 transition-all cursor-pointer"
+          >
+            EXIT GAME
+          </button>
         </div>
       </motion.div>
 

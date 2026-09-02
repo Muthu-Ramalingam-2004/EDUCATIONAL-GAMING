@@ -36,20 +36,20 @@ export default function SplashScreen({ onStart }) {
             📐
           </motion.div>
           <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 text-white font-black text-xs px-4 py-1.5 rounded-full border-2 border-white shadow-xl flex items-center gap-1.5 whitespace-nowrap font-heading uppercase tracking-wider">
-            <Flame className="w-4 h-4 text-amber-300 fill-amber-300 animate-bounce" /> CBSE Class 9 & 10
+            <Flame className="w-4 h-4 text-amber-300 fill-amber-300 animate-bounce" /> 4th STD – 12th STD
           </div>
         </div>
 
         {/* Title & Tagline */}
         <div className="space-y-3 pt-4">
-          <h1 className="text-5xl sm:text-7xl font-black tracking-tight font-heading uppercase text-slate-900 dark:text-white">
-            Math<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 drop-shadow-lg">Quest</span>
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight font-heading uppercase text-slate-900 dark:text-white">
+            Educational <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 drop-shadow-lg">Quest</span>
           </h1>
           <p className="text-xl sm:text-2xl font-black text-indigo-600 dark:text-cyan-300 tracking-wide font-heading">
-            "Don't Just Solve Maths. Conquer It."
+            "Learn, Master & Conquer Every Subject."
           </p>
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-lg mx-auto leading-relaxed font-medium font-body">
-            Transform Algebra, Geometry, Trigonometry & Statistics into an epic gamified conquest. Earn XP, unlock realms, climb the global leaderboard, and master CBSE Maths!
+            Transform Maths, Science, English, Social Studies, Languages & Computer Science into an epic gamified conquest. Earn XP, unlock realms, climb global leaderboards, and master Classes 4th–12th!
           </p>
         </div>
 
@@ -97,7 +97,7 @@ export default function SplashScreen({ onStart }) {
         </div>
 
         <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest flex items-center justify-center gap-2 font-heading">
-          <ShieldCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> High-Performance AAA Math Gaming Engine
+          <ShieldCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> High-Performance Educational Gaming Engine
         </p>
 
       </motion.div>

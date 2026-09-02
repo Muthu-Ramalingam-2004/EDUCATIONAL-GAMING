@@ -134,7 +134,7 @@ function startServer() {
     const storeExists = fs.existsSync(storePath);
 
     console.log(`\n${'='.repeat(60)}`);
-    console.log(`⚡  MathQuest Backend Server started on port ${PORT}`);
+    console.log(`⚡  Educational Quest Backend Server started on port ${PORT}`);
     console.log(`🔗  API Base URL   : http://localhost:${PORT}/api`);
     console.log(`🏥  Health Check   : http://localhost:${PORT}/api/health`);
     console.log(`${'─'.repeat(60)}`);

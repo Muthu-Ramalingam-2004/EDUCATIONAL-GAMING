@@ -36,7 +36,7 @@ export default function TopHeader({ user, onNavigate, onOpenProfile, isAdmin, on
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold flex items-center gap-1 font-body">
-              <Zap className="w-3 h-3 text-cyan-500 dark:text-cyan-400" /> Maths Adventurer
+              <Zap className="w-3 h-3 text-cyan-500 dark:text-cyan-400" /> Educational Adventurer
             </p>
           </div>
         </div>

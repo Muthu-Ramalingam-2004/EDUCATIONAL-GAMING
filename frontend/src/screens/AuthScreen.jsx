@@ -276,16 +276,16 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin, initialMode =
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-400 text-slate-950 font-black text-2xl flex items-center justify-center shadow-lg border border-white">
                 📐
               </div>
-              <h2 className="text-3xl font-black tracking-tight font-heading text-white">
-                Math<span className="text-amber-400">Quest</span>
+              <h2 className="text-2xl font-black tracking-tight font-heading text-white">
+                Educational <span className="text-amber-400">Quest</span>
               </h2>
             </div>
 
             <h3 className="text-3xl font-black tracking-tight leading-tight font-heading text-white pt-2">
-              Unlock Your Maths Powers! 🚀
+              Unlock Your Learning Powers! 🚀
             </h3>
             <p className="text-sm text-cyan-200 leading-relaxed font-medium font-body">
-              Join thousands of CBSE Class 9th &amp; 10th students conquering Algebra, Geometry, Trigonometry, and Statistics through high-stakes interactive gaming.
+              Join thousands of 4th STD – 12th STD students conquering Maths, Science, English, Social Studies, and Computer Science through high-stakes interactive gaming.
             </p>
           </div>
 
@@ -305,7 +305,7 @@ export default function AuthScreen({ onLoginSuccess, onAdminLogin, initialMode =
           </div>
 
           <div className="text-[11px] text-slate-300 font-bold uppercase tracking-widest relative z-10 flex items-center gap-1.5 font-heading">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" /> CBSE Standard 9 &amp; 10 Aligned
+            <ShieldCheck className="w-4 h-4 text-emerald-400" /> 4th STD – 12th STD Curriculum Aligned
           </div>
         </div>
 
